@@ -147,12 +147,13 @@ Each sprint lists its **GitHub-flow checklist** — the steps of the nine-step f
 | D-05 | 2026-10-31 | No LLM in the decision path ([ADR-0003](docs/ARCHITECTURE.md#adr-0003)) | The pitch's value is determinism and replayability | Any narration feature is icebox-only and post-verdict |
 | D-06 | 2026-10-31 | GitHub is the only live connector; Jira/Salesforce/Snowflake are seeded fixtures | Time-to-finished is the binding constraint; no credentials exist for the others | Fixtures labeled synthetic everywhere; port makes live adapters a drop-in |
 | D-07 | 2026-10-31 | Dogfood contract `self-delivery` is in scope | It makes step 9 (observe → issues) real instead of staged | Observe workflow needs `issues: write`; breach thresholds must be realistic for a solo repo |
+| D-08 | 2026-10-31 | `main` has three non-PR commits (`404832e` auto-generated initial commit, `667fd18` bootstrap, `da3b75e` merge of the two) instead of the one allowed by D-03 | Cause: repo created with auto-init. Consequence: none going forward; recorded, not rewritten (no force-push, ruleset forbids it) | All later changes still go through PRs; history is recorded, not rewritten |
 
 ## Interview Stories
 
 _One per sprint, written by the developer at sprint review. A decision you made, the trade-off, what you would do differently._
 
-- Sprint 0 —
+- Sprint 0 — Bootstrap commit plus stage-2 required checks; all later work via draft PRs; dependency graph enabled only after launch. Would auto-init the repo differently if I were starting over.
 - Sprint 1 —
 - Sprint 2 —
 - Sprint 3 —
