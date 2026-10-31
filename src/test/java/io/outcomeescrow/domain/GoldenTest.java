@@ -82,7 +82,6 @@ class GoldenTest {
     }
   }
 
-
   @Test
   void shuffledThresholdLatestByHashDoesNotChangeVerdict() throws Exception {
     GoldenCase testCase = read("threshold-latest-by-hash.json");
