@@ -154,7 +154,7 @@ Each sprint lists its **GitHub-flow checklist** — the steps of the nine-step f
 _One per sprint, written by the developer at sprint review. A decision you made, the trade-off, what you would do differently._
 
 - Sprint 0 — Bootstrap commit plus stage-2 required checks; all later work via draft PRs; dependency graph enabled only after launch. Would auto-init the repo differently if I were starting over.
-- Sprint 1 —
+- Sprint 1 — Built Threshold/WindowedRate/Deadline evaluation, canonical JSON parsing, bps verdicts, JDBC-existing domain purity tests, 13 deterministic golden cases, named-account double-entry settlement, and append-only repositories; deferred sprint tag and tracking issue closure pending architect gate.
 - Sprint 2 —
 - Sprint 3 —
 - Sprint 4 —
