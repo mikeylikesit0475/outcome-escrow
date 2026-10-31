@@ -29,8 +29,12 @@ public class ConnectorConfiguration {
   }
 
   @Bean
-  public GithubEvidenceSource githubEvidenceSource(RestClient.Builder builder) {
-    return new GithubEvidenceSource(builder, System.getenv().getOrDefault("GITHUB_TOKEN", ""));
+  public GithubEvidenceSource githubEvidenceSource() {
+    return new GithubEvidenceSource(
+        RestClient.builder(),
+        "mikeylikesit0475",
+        "outcome-escrow",
+        System.getenv().getOrDefault("GITHUB_TOKEN", ""));
   }
 
   @Bean

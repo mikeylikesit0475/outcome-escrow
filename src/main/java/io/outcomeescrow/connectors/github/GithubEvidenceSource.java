@@ -51,14 +51,15 @@ public class GithubEvidenceSource implements EvidenceSource {
     if (metric == null) {
       return List.of();
     }
-    String valueJson = switch (metric) {
-      case "ci_runs_passed" -> ciRuns(now, true);
-      case "ci_runs_total" -> ciRuns(now, false);
-      case "pr_median_hours_to_merge" -> prMedian(now, window);
-      case "milestone_closed_at" -> milestone(outcome);
-      case "open_bugs_older_than_days" -> openBugs(now, outcome, window);
-      default -> null;
-    };
+    String valueJson =
+        switch (metric) {
+          case "ci_runs_passed" -> ciRuns(now, true);
+          case "ci_runs_total" -> ciRuns(now, false);
+          case "pr_median_hours_to_merge" -> prMedian(now, window);
+          case "milestone_closed_at" -> milestone(outcome);
+          case "open_bugs_older_than_days" -> openBugs(now, outcome, window);
+          default -> null;
+        };
     if (valueJson == null) {
       return List.of();
     }
@@ -135,7 +136,8 @@ public class GithubEvidenceSource implements EvidenceSource {
       durations.sort(Comparator.naturalOrder());
       long median;
       if (durations.size() % 2 == 0) {
-        median = (durations.get(durations.size() / 2 - 1) + durations.get(durations.size() / 2)) / 2;
+        median =
+            (durations.get(durations.size() / 2 - 1) + durations.get(durations.size() / 2)) / 2;
       } else {
         median = durations.get(durations.size() / 2);
       }
@@ -211,7 +213,8 @@ public class GithubEvidenceSource implements EvidenceSource {
   private static String sha256(String value) {
     try {
       java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-      return java.util.HexFormat.of().formatHex(digest.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+      return java.util.HexFormat.of()
+          .formatHex(digest.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
