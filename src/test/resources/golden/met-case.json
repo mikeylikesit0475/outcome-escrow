@@ -1,0 +1,5 @@
+{
+  "outcomeId": "outcome-met",
+  "evidencePayload": "success=true",
+  "expectedStatus": "MET"
+}

@@ -1,0 +1,5 @@
+{
+  "outcomeId": "outcome-insufficient",
+  "evidencePayload": "",
+  "expectedStatus": "INSUFFICIENT_EVIDENCE"
+}
