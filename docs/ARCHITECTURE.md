@@ -141,8 +141,8 @@ Errors are RFC 9457 problem details. No auth in v0 (single-tenant PoC, documente
 
 ### ADR-0001 — Stack: Java 25, Spring Boot 4.1, Gradle 9.8, Postgres 16
 **Context.** Portfolio lacks a Java/Spring repo; the pitch is enterprise software; Java 25 LTS and Docker are installed; Gradle 9.8 supports Java 25.
-**Decision.** Skeleton generated from start.spring.io with Boot 4.1.x so starter names and Jackson 3 packages are correct for Boot 4. Gradle wrapper pinned; Spotless + `-Werror`; Testcontainers for integration tests; springdoc for OpenAPI.
-**Consequences.** Builder must not hand-write Boot 3-era starter names. CI uses `actions/setup-java` temurin 25 with Gradle caching.
+**Decision.** Skeleton generated from start.spring.io with Boot 4.1.x; Boot's jackson-bom (2.x, `com.fasterxml`) is the single JSON library used outside `domain/`, and `domain/` keeps the JDK-only `CanonicalJson` parser. No separate `tools.jackson` dependency is introduced. Gradle wrapper pinned; Spotless + `-Werror`; Testcontainers for integration tests; springdoc for OpenAPI.
+**Consequences.** Builder must not hand-write Boot 3-era starter names and must not add a second JSON binding library. CI uses `actions/setup-java` temurin 25 with Gradle caching.
 
 ### ADR-0002 — Public repository and solo-repo ruleset from Sprint 0
 **Context.** The GitHub flow is a deliverable; rulesets on GitHub Free apply to public repos only; one human, one bot.
