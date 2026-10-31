@@ -1,0 +1,23 @@
+name: SLA breach
+description: Auto-filed or manually-filed SLA breach
+title: "SLA breach: "
+labels: ["sla-breach", "type:bug"]
+body:
+  - type: input
+    id: outcome
+    attributes:
+      label: Outcome
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence head hash, rule version, score
+    validations:
+      required: true
+  - type: input
+    id: run
+    attributes:
+      label: Workflow run URL
+    validations:
+      required: true
