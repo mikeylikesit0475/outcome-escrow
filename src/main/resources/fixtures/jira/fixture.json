@@ -1,0 +1,8 @@
+{
+  "synthetic": true,
+  "seed": 42,
+  "metrics": {
+    "p1_resolved_within_sla_rate": { "value": 0.92 },
+    "backlog_age_p90_days": { "value": 14 }
+  }
+}

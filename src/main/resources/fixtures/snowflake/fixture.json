@@ -1,0 +1,8 @@
+{
+  "synthetic": true,
+  "seed": 42,
+  "metrics": {
+    "nightly_load_completed_at": { "eventAt": "2026-12-31T04:17:00Z" },
+    "row_count_delta_pct": { "value": 0.03 }
+  }
+}
