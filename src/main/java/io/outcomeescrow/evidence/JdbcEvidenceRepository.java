@@ -1,15 +1,15 @@
 package io.outcomeescrow.evidence;
 
 import java.util.List;
-import java.util.Objects;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class JdbcEvidenceRepository implements EvidenceRepository {
 
   private static final java.security.MessageDigest MD;
+
   static {
     try {
       MD = java.security.MessageDigest.getInstance("SHA-256");
@@ -138,7 +138,8 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
     String previous = null;
     boolean valid = true;
     for (EvidenceRecord row : rows) {
-      if (row.prevHash() != previous && !(row.prevHash() != null && row.prevHash().equals(previous))) {
+      if (row.prevHash() != previous
+          && !(row.prevHash() != null && row.prevHash().equals(previous))) {
         valid = false;
         break;
       }
@@ -174,7 +175,8 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
   private static String sha256(String value) {
     synchronized (MD) {
       MD.reset();
-      return java.util.HexFormat.of().formatHex(MD.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+      return java.util.HexFormat.of()
+          .formatHex(MD.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
   }
 }
