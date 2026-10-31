@@ -1,5 +1,0 @@
-{
-  "outcomeId": "outcome-missed",
-  "evidencePayload": "success=false",
-  "expectedStatus": "MISSED"
-}
