@@ -1,0 +1,8 @@
+{
+  "synthetic": true,
+  "seed": 42,
+  "metrics": {
+    "case_csat_avg": { "value": 4.6 },
+    "case_first_response_hours_p50": { "value": 2.5 }
+  }
+}
