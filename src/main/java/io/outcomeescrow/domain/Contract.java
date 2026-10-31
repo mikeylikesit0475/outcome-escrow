@@ -17,8 +17,7 @@ public record Contract(
       throw new IllegalArgumentException("outcomes is required");
     }
     if (createdAt == null) {
-      var now = Instant.now();
-      createdAt = now;
+      throw new IllegalArgumentException("createdAt is required");
     }
     outcomes = List.copyOf(outcomes);
   }
