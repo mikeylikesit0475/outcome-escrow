@@ -1,15 +1,15 @@
 package io.outcomeescrow.config;
 
+import io.outcomeescrow.connectors.github.GithubEvidenceSource;
 import io.outcomeescrow.connectors.jira.JiraFixtureEvidenceSource;
 import io.outcomeescrow.connectors.salesforce.SalesforceFixtureEvidenceSource;
 import io.outcomeescrow.connectors.snowflake.SnowflakeFixtureEvidenceSource;
 import io.outcomeescrow.evidence.EvidenceSource;
 import io.outcomeescrow.evidence.EvidenceSourceRegistry;
 import java.util.List;
-import io.outcomeescrow.connectors.github.GithubEvidenceSource;
-import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 public class ConnectorConfiguration {
@@ -29,11 +29,11 @@ public class ConnectorConfiguration {
   }
 
   @Bean
-  @Bean
   public GithubEvidenceSource githubEvidenceSource(RestClient.Builder builder) {
     return new GithubEvidenceSource(builder, System.getenv().getOrDefault("GITHUB_TOKEN", ""));
   }
 
+  @Bean
   public EvidenceSourceRegistry evidenceSourceRegistry(List<EvidenceSource> sources) {
     EvidenceSourceRegistry registry = new EvidenceSourceRegistry();
     sources.forEach(registry::register);

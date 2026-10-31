@@ -6,59 +6,14 @@ outcomes:
     name: Jira P1 resolved within SLA
     connector: jira-fixture
     metric: p1_resolved_within_sla_rate
-    windowDays: 30
-    value: 1000
-    rule:
-      type: Threshold
-      metric: p1_resolved_within_sla_rate
-      operator: AT_LEAST
-      target: 0.9
-    tiers:
-      floorScore: 8000
-      clawbackBasisPointsBelowFloor: 1000
-      tiers:
-        - minimumScore: 0
-          payoutBasisPoints: 0
-        - minimumScore: 8000
-          payoutBasisPoints: 6000
-        - minimumScore: 10000
-          payoutBasisPoints: 10000
+    window_days: 30
   - id: acme-salesforce-csat
     name: Salesforce case CSAT average
     connector: salesforce-fixture
     metric: case_csat_avg
-    windowDays: 30
-    value: 1000
-    rule:
-      type: Threshold
-      metric: case_csat_avg
-      operator: AT_LEAST
-      target: 4.0
-    tiers:
-      floorScore: 0
-      clawbackBasisPointsBelowFloor: 0
-      tiers:
-        - minimumScore: 0
-          payoutBasisPoints: 0
-        - minimumScore: 5000
-          payoutBasisPoints: 5000
-        - minimumScore: 10000
-          payoutBasisPoints: 10000
+    window_days: 30
   - id: acme-snowflake-load
     name: Snowflake nightly load completed
     connector: snowflake-fixture
     metric: nightly_load_completed_at
-    windowDays: 30
-    value: 1000
-    rule:
-      type: Deadline
-      eventMetric: nightly_load_completed_at
-      dueAt: 2026-12-31T03:00:00Z
-    tiers:
-      floorScore: 10000
-      clawbackBasisPointsBelowFloor: 500
-      tiers:
-        - minimumScore: 0
-          payoutBasisPoints: 0
-        - minimumScore: 10000
-          payoutBasisPoints: 10000
+    window_days: 30
