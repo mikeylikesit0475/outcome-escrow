@@ -6,7 +6,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public final class Evaluator {
   public static final String VERSION = "eval-0.1.0";
@@ -43,14 +42,31 @@ public final class Evaluator {
   }
 
   private static int scoreFor(Outcome outcome, List<Evidence> evidence, Instant now) {
-    String canonical = evidence.stream().map(Evidence::payload).collect(Collectors.joining(","));
-    if (canonical.contains("late=true")) {
+    // Evidence payloads are untrusted input. Recognize only whole, exact status
+    // facts so a substring embedded in a metric value or free-form text cannot
+    // choose the verdict.
+    boolean late = false;
+    boolean succeeded = false;
+    boolean failed = false;
+    for (Evidence record : evidence) {
+      if (record.payload() == null) {
+        continue;
+      }
+      if (record.payload().equals("late=true")) {
+        late = true;
+      } else if (record.payload().equals("success=true")) {
+        succeeded = true;
+      } else if (record.payload().equals("success=false")) {
+        failed = true;
+      }
+    }
+    if (late) {
       return 0;
     }
-    if (canonical.contains("success=true")) {
+    if (succeeded) {
       return 100;
     }
-    if (canonical.contains("success=false")) {
+    if (failed) {
       return 0;
     }
     if (outcome.ruleSpec() instanceof RuleSpec.Deadline deadline && now.isAfter(deadline.dueAt())) {
