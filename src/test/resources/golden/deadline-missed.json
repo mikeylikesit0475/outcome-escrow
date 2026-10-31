@@ -1,0 +1,26 @@
+{
+  "outcomeId": "deadline-missed",
+  "outcomeName": "deadline-missed",
+  "milestoneValueMinor": 1000,
+  "currency": "USD",
+  "rule": {
+    "type": "Deadline",
+    "eventMetric": "deploy",
+    "metric": "deploy",
+    "dueAt": "2026-02-15T00:00:00Z"
+  },
+  "evidence": [
+    {
+      "source": "deploy-log",
+      "sourceRef": "deploy-2",
+      "capturedAt": "2026-02-14T10:00:00Z",
+      "payload": {
+        "eventAt": "2026-02-16T09:30:00Z"
+      },
+      "hash": "d2"
+    }
+  ],
+  "now": "2026-02-20T00:00:00Z",
+  "expectedStatus": "MISSED",
+  "expectedScore": 0
+}

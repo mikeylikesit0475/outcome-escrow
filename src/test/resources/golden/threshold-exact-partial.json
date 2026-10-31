@@ -1,0 +1,26 @@
+{
+  "outcomeId": "threshold-exact-partial",
+  "outcomeName": "threshold-exact-partial",
+  "milestoneValueMinor": 1000,
+  "currency": "USD",
+  "rule": {
+    "type": "Threshold",
+    "metric": "throughput",
+    "operator": "EXACTLY",
+    "target": 100.0
+  },
+  "evidence": [
+    {
+      "source": "probe",
+      "sourceRef": "x1",
+      "capturedAt": "2026-02-01T00:00:00Z",
+      "payload": {
+        "value": 95.0
+      },
+      "hash": "x1"
+    }
+  ],
+  "now": "2026-02-15T00:00:00Z",
+  "expectedStatus": "PARTIAL",
+  "expectedScore": 9500
+}

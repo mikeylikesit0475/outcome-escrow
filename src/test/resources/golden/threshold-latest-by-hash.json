@@ -1,0 +1,35 @@
+{
+  "outcomeId": "threshold-latest-by-hash",
+  "outcomeName": "threshold-latest-by-hash",
+  "milestoneValueMinor": 1000,
+  "currency": "USD",
+  "rule": {
+    "type": "Threshold",
+    "metric": "availability",
+    "operator": "AT_LEAST",
+    "target": 99.0
+  },
+  "evidence": [
+    {
+      "source": "probe",
+      "sourceRef": "late-low",
+      "capturedAt": "2026-02-05T00:00:00Z",
+      "payload": {
+        "value": 50.0
+      },
+      "hash": "z-last"
+    },
+    {
+      "source": "probe",
+      "sourceRef": "late-high",
+      "capturedAt": "2026-02-05T00:00:00Z",
+      "payload": {
+        "value": 100.0
+      },
+      "hash": "a-first"
+    }
+  ],
+  "now": "2026-02-15T00:00:00Z",
+  "expectedStatus": "MET",
+  "expectedScore": 10000
+}
