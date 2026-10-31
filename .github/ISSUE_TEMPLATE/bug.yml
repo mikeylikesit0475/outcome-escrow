@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a defect
+title: "bug: "
+labels: ["type:bug"]
+body:
+  - type: dropdown
+    id: observed_via
+    attributes:
+      label: Observed via
+      options:
+        - observe workflow
+        - manual
+        - CI
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+    validations:
+      required: true

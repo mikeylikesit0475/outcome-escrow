@@ -1,0 +1,21 @@
+changelog:
+  exclude:
+    labels:
+      - sla-breach
+  categories:
+    - title: Features
+      labels:
+        - type:feature
+    - title: Fixes
+      labels:
+        - type:bug
+    - title: Security
+      labels:
+        - type:security
+    - title: CI & chores
+      labels:
+        - type:ci
+        - type:chore
+    - title: Docs
+      labels:
+        - type:docs
