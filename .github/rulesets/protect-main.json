@@ -43,6 +43,9 @@
           },
           {
             "context": "codeql"
+          },
+          {
+            "context": "dependency-review"
           }
         ]
       }
