@@ -26,7 +26,12 @@ public record Evidence(
   }
 
   public Evidence(
-      String source, String sourceRef, Instant capturedAt, String payload, String hash, String prevHash) {
+      String source,
+      String sourceRef,
+      Instant capturedAt,
+      String payload,
+      String hash,
+      String prevHash) {
     this(null, null, null, source, sourceRef, capturedAt, payload, hash, prevHash, false);
   }
 }

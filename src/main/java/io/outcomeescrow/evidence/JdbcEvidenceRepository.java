@@ -19,17 +19,18 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
     if (id == null || id.isBlank()) {
       id = java.util.UUID.randomUUID().toString();
     }
-    EvidenceRecord normalized = new EvidenceRecord(
-        id,
-        record.contractId(),
-        record.outcomeId(),
-        record.source(),
-        record.sourceRef(),
-        record.capturedAt(),
-        record.payload(),
-        record.hash(),
-        record.prevHash(),
-        record.synthetic());
+    EvidenceRecord normalized =
+        new EvidenceRecord(
+            id,
+            record.contractId(),
+            record.outcomeId(),
+            record.source(),
+            record.sourceRef(),
+            record.capturedAt(),
+            record.payload(),
+            record.hash(),
+            record.prevHash(),
+            record.synthetic());
     jdbcClient
         .sql(
             """

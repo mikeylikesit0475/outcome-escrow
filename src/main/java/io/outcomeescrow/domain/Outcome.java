@@ -1,6 +1,5 @@
 package io.outcomeescrow.domain;
 
-import java.util.List;
 import java.util.Map;
 
 public record Outcome(
@@ -22,7 +21,8 @@ public record Outcome(
     }
   }
 
-  public Outcome(String id, String name, RuleSpec ruleSpec, long milestoneValueMinor, String currency) {
+  public Outcome(
+      String id, String name, RuleSpec ruleSpec, long milestoneValueMinor, String currency) {
     this(id, name, ruleSpec, milestoneValueMinor, currency, null, null, Map.of(), null);
   }
 
