@@ -148,7 +148,11 @@ class AppendOnlyRepositoryTests {
 
     assertThrows(
         DataAccessException.class,
-        () -> jdbcClient.sql("delete from ledger_postings where id = :id").param("id", "p-delete").update());
+        () ->
+            jdbcClient
+                .sql("delete from ledger_postings where id = :id")
+                .param("id", "p-delete")
+                .update());
   }
 
   @Test
