@@ -1,0 +1,26 @@
+{
+  "outcomeId": "threshold-at-least-partial",
+  "outcomeName": "threshold-at-least-partial",
+  "milestoneValueMinor": 1000,
+  "currency": "USD",
+  "rule": {
+    "type": "Threshold",
+    "metric": "availability",
+    "operator": "AT_LEAST",
+    "target": 99.0
+  },
+  "evidence": [
+    {
+      "source": "probe",
+      "sourceRef": "p2",
+      "capturedAt": "2026-02-01T00:00:00Z",
+      "payload": {
+        "value": 90.0
+      },
+      "hash": "h2"
+    }
+  ],
+  "now": "2026-02-15T00:00:00Z",
+  "expectedStatus": "PARTIAL",
+  "expectedScore": 9091
+}

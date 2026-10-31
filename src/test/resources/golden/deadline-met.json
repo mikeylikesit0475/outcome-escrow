@@ -1,0 +1,26 @@
+{
+  "outcomeId": "deadline-met",
+  "outcomeName": "deadline-met",
+  "milestoneValueMinor": 1000,
+  "currency": "USD",
+  "rule": {
+    "type": "Deadline",
+    "eventMetric": "deploy",
+    "metric": "deploy",
+    "dueAt": "2026-02-15T00:00:00Z"
+  },
+  "evidence": [
+    {
+      "source": "deploy-log",
+      "sourceRef": "deploy-1",
+      "capturedAt": "2026-02-14T10:00:00Z",
+      "payload": {
+        "eventAt": "2026-02-14T09:30:00Z"
+      },
+      "hash": "d1"
+    }
+  ],
+  "now": "2026-02-15T00:00:00Z",
+  "expectedStatus": "MET",
+  "expectedScore": 10000
+}

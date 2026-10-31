@@ -1,0 +1,16 @@
+{
+  "outcomeId": "deadline-missing",
+  "outcomeName": "deadline-missing",
+  "milestoneValueMinor": 1000,
+  "currency": "USD",
+  "rule": {
+    "type": "Deadline",
+    "eventMetric": "deploy",
+    "metric": "deploy",
+    "dueAt": "2026-02-15T00:00:00Z"
+  },
+  "evidence": [],
+  "now": "2026-02-10T00:00:00Z",
+  "expectedStatus": "INSUFFICIENT_EVIDENCE",
+  "expectedScore": 0
+}

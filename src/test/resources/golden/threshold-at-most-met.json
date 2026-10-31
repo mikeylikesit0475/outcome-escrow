@@ -1,0 +1,26 @@
+{
+  "outcomeId": "threshold-at-most-met",
+  "outcomeName": "threshold-at-most-met",
+  "milestoneValueMinor": 1000,
+  "currency": "USD",
+  "rule": {
+    "type": "Threshold",
+    "metric": "latency",
+    "operator": "AT_MOST",
+    "target": 200.0
+  },
+  "evidence": [
+    {
+      "source": "probe",
+      "sourceRef": "l1",
+      "capturedAt": "2026-02-01T00:00:00Z",
+      "payload": {
+        "value": 100.0
+      },
+      "hash": "l1"
+    }
+  ],
+  "now": "2026-02-15T00:00:00Z",
+  "expectedStatus": "MET",
+  "expectedScore": 10000
+}

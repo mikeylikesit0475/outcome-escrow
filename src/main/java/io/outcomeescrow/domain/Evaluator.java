@@ -104,7 +104,7 @@ public final class Evaluator {
                 latestCaptured == null
                     || evidence.capturedAt().isAfter(latestCaptured)
                     || (evidence.capturedAt().equals(latestCaptured)
-                        && evidence.hash().compareToIgnoreCase(latestHash) >= 0);
+                        && evidence.hash().compareToIgnoreCase(latestHash) < 0);
             if (latestCaptured == null || replace) {
               latestValue = value;
               latestCaptured = evidence.capturedAt();
