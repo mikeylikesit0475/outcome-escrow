@@ -107,6 +107,55 @@ class AppendOnlyRepositoryTests {
   }
 
   @Test
+  void postingTriggerRejectsUpdate() {
+    postingRepository.ensureAccount("escrow", "USD");
+    postingRepository.ensureAccount("vendor", "USD");
+    LedgerPostingRecord record =
+        new LedgerPostingRecord(
+            "p-update",
+            "ik-posting-update",
+            "escrow",
+            "vendor",
+            1000L,
+            "USD",
+            Instant.parse("2026-01-01T00:00:00Z"));
+    assertTrue(postingRepository.append(record));
+
+    assertThrows(
+        DataAccessException.class,
+        () ->
+            jdbcClient
+                .sql("update ledger_postings set amount_minor = :amount where id = :id")
+                .param("amount", 2000L)
+                .param("id", "p-update")
+                .update());
+  }
+
+  @Test
+  void postingTriggerRejectsDelete() {
+    postingRepository.ensureAccount("escrow", "USD");
+    postingRepository.ensureAccount("vendor", "USD");
+    LedgerPostingRecord record =
+        new LedgerPostingRecord(
+            "p-delete",
+            "ik-posting-delete",
+            "escrow",
+            "vendor",
+            1000L,
+            "USD",
+            Instant.parse("2026-01-01T00:00:00Z"));
+    assertTrue(postingRepository.append(record));
+
+    assertThrows(
+        DataAccessException.class,
+        () ->
+            jdbcClient
+                .sql("delete from ledger_postings where id = :id")
+                .param("id", "p-delete")
+                .update());
+  }
+
+  @Test
   void postingIdempotencyKeyIsUnique() {
     LedgerPostingRecord first =
         new LedgerPostingRecord(
