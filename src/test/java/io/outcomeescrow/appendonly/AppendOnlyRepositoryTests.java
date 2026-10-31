@@ -71,7 +71,8 @@ class AppendOnlyRepositoryTests {
             Instant.parse("2026-01-01T00:00:00Z"),
             "{\"value\":1}",
             "hash-e1",
-            null);
+            null,
+            false);
     evidenceRepository.append(record);
 
     DataAccessException thrown =
@@ -99,7 +100,8 @@ class AppendOnlyRepositoryTests {
             Instant.parse("2026-01-01T00:00:00Z"),
             "{\"value\":1}",
             "hash-e2",
-            null);
+            null,
+            false);
     evidenceRepository.append(record);
     assertThrows(
         DataAccessException.class,

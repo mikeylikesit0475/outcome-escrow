@@ -11,4 +11,5 @@ public record EvidenceRecord(
     Instant capturedAt,
     String payload,
     String hash,
-    String prevHash) {}
+    String prevHash,
+    boolean synthetic) {}
