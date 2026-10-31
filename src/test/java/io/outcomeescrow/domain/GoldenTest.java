@@ -82,6 +82,36 @@ class GoldenTest {
     }
   }
 
+
+  @Test
+  void shuffledThresholdLatestByHashDoesNotChangeVerdict() throws Exception {
+    GoldenCase testCase = read("threshold-latest-by-hash.json");
+    RuleSpec rule = toRuleSpec(testCase.rule());
+    Outcome outcome =
+        new Outcome(
+            testCase.outcomeId(),
+            testCase.outcomeName(),
+            rule,
+            testCase.milestoneValueMinor(),
+            testCase.currency());
+    List<Evidence> original = toEvidence(testCase.evidence());
+    Instant now = Instant.parse(testCase.now());
+    Verdict expected = Evaluator.evaluate(outcome, original, now);
+
+    List<Evidence> reversed = new ArrayList<>(original.reversed());
+    assertEquals(expected, Evaluator.evaluate(outcome, reversed, now));
+
+    List<Evidence> swapped = new ArrayList<>();
+    if (original.size() > 1) {
+      for (int i = original.size() - 1; i >= 0; i--) {
+        swapped.add(original.get(i));
+      }
+    } else {
+      swapped.addAll(original);
+    }
+    assertEquals(expected, Evaluator.evaluate(outcome, swapped, now));
+  }
+
   private static GoldenCase read(String fileName) throws Exception {
     try (InputStream stream = GoldenTest.class.getResourceAsStream("/golden/" + fileName)) {
       if (stream == null) {
