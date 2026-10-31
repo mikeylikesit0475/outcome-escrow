@@ -40,6 +40,12 @@
         "required_status_checks": [
           {
             "context": "build"
+          },
+          {
+            "context": "codeql"
+          },
+          {
+            "context": "dependency-review"
           }
         ]
       }
