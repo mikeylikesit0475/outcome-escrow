@@ -19,7 +19,7 @@ Sprint 0 is complete. `main` is public, protected by `protect-main` (stage 2), a
 |---|---|
 | Plan / issue | Sprint 0 tracking issue #1 and work issues #7–#11 |
 | Branch | `feature/*` branches throughout |
-| Open draft PR | PRs above were opened as drafts |
+| Open draft PR | #12 and #13 were opened as drafts; #14, #19, #20, #21, and #22 were opened ready (corrected carry-over) |
 | CI green | `./gradlew check` and GitHub Actions runs on these PRs |
 | Copilot review | Requested as an account-repo step but no reviewer login was resolvable via the CLI on this account; recorded as a limitation, not a veto |
 | Squash merge | All six PRs merged with squash |
@@ -27,5 +27,5 @@ Sprint 0 is complete. `main` is public, protected by `protect-main` (stage 2), a
 
 ## Notes
 
-- Dependency review job runs with `continue-on-error: true` until GitHub auto-indexes the dependency graph for the new public repository; it still executes on every PR.
+- Dependency graph was enabled for the public repository during Sprint 1; dependency-review is now blocking and required in CI for Sprint 1 PRs (see PRs #31–#33).
 - GitHub Project board creation is deferred until the token has the `project` scope; `gh auth refresh -s project,read:project` still fails with missing scope.
