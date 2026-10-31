@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Local secrets and scratch workfiles
+.env
+.sprint-*.txt
+*.local.env
