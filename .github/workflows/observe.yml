@@ -1,0 +1,150 @@
+name: observe
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+  issues: write
+  packages: read
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: outcomeescrow
+          POSTGRES_USER: outcome
+          POSTGRES_PASSWORD: outcome
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U outcome -d outcomeescrow"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Start released image
+        run: |
+          docker pull ghcr.io/mikeylikesit0475/outcome-escrow:v0.1.0
+          docker run -d --name outcome-escrow --network host \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/outcomeescrow \
+            -e SPRING_DATASOURCE_USERNAME=outcome \
+            -e SPRING_DATASOURCE_PASSWORD=outcome \
+            -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
+            ghcr.io/mikeylikesit0475/outcome-escrow:v0.1.0
+      - name: Pull, evaluate and file issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 <<'PY'
+          import json
+          import os
+          import subprocess
+          import time
+          import urllib.error
+          import urllib.request
+
+          base = "http://localhost:8080"
+          run_id = os.environ.get("GITHUB_RUN_ID", "unknown")
+          run_url = "https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/" + str(run_id)
+
+          def post(path):
+              request = urllib.request.Request(base + path, data=b"", method="POST")
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return json.load(response)
+              except Exception as exc:
+                  raise RuntimeError(f"request failed for {path}: {exc}") from exc
+
+          def get(path):
+              with urllib.request.urlopen(base + path, timeout=30) as response:
+                  return json.load(response)
+
+          def file_or_comment(title, body):
+              output = subprocess.check_output(
+                  ["gh", "issue", "list", "--state", "open", "--label", "sla-breach",
+                   "--json", "number,title"],
+                  text=True,
+                  env=os.environ,
+              )
+              existing = next((item for item in json.loads(output) if item.get("title") == title), None)
+              if existing is not None:
+                  path = "/tmp/comment.md"
+                  with open(path, "w", encoding="utf-8") as handle:
+                      handle.write(body)
+                  subprocess.run(
+                      ["gh", "issue", "comment", str(existing["number"]), "--body-file", path],
+                      check=True,
+                      env=os.environ,
+                  )
+                  return
+              path = "/tmp/issue.md"
+              with open(path, "w", encoding="utf-8") as handle:
+                  handle.write(body)
+              subprocess.run(
+                  ["gh", "issue", "create", "--title", title, "--label", "sla-breach",
+                   "--body-file", path],
+                  check=True,
+                  env=os.environ,
+              )
+
+          healthy = False
+          for _ in range(60):
+              try:
+                  if get("/actuator/health").get("status") == "UP":
+                      healthy = True
+                      break
+              except Exception:
+                  pass
+              time.sleep(2)
+
+          if not healthy:
+              file_or_comment(
+                  "sla-breach: self-delivery health check failed",
+                  "Observed via: observe workflow\n\n"
+                  "The self-delivery service did not become healthy during the scheduled observation cycle.\n\n"
+                  "Run: " + run_url + "\n",
+              )
+              raise SystemExit(0)
+
+          try:
+              pulled = post("/contracts/self-delivery/evidence:pull")
+              evaluated = post("/contracts/self-delivery/evaluate")
+          except Exception as exc:
+              file_or_comment(
+                  "sla-breach: self-delivery observation failed",
+                  "Observed via: observe workflow\n\n"
+                  "The observation cycle could not complete: " + str(exc) + "\n\nRun: " + run_url + "\n",
+              )
+              raise SystemExit(0)
+
+          for result in evaluated.get("verdicts", []):
+              if result.get("status") != "MISSED":
+                  continue
+              verdict = get("/verdicts/" + result["verdictId"])
+              title = "sla-breach: self-delivery " + str(result["outcomeId"]) + " missed"
+              body = (
+                  "Observed via: observe workflow\n\n"
+                  "- Outcome: " + str(result["outcomeId"]) + "\n"
+                  "- Status: MISSED\n"
+                  "- Score: " + str(result.get("score")) + " bps\n"
+                  "- Verdict ID: " + str(result.get("verdictId")) + "\n"
+                  "- Evidence head hash: " + str(verdict.get("evidenceHeadHash")) + "\n"
+                  "- Rule version: " + str(verdict.get("ruleVersion")) + "\n"
+                  "- Explanation: " + str(verdict.get("explanation")) + "\n"
+                  "- Run: " + run_url + "\n"
+              )
+              file_or_comment(title, body)
+          PY
+      - name: Stop released image
+        if: always()
+        run: docker rm -f outcome-escrow || true
