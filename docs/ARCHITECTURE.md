@@ -92,7 +92,7 @@ public interface EvidenceSource {
 
 | Connector | Metrics | Source |
 |---|---|---|
-| `github` (live) | `ci_runs_passed`, `ci_runs_total` (workflow runs on `main`, needs `actions: read`), `pr_median_hours_to_merge`, `milestone_closed_at`, `open_bugs_older_than_days` | REST v3 via `RestClient`, token from env, read-only, paginated, rate-limit aware |
+| `github` (live) | `ci_pass_rate` (one evidence record: `{numerator, denominator}` from workflow runs on `main`, needs `actions: read`), `pr_median_hours_to_merge`, `milestone_closed_at`, `open_bugs_older_than_days` | REST v3 via `RestClient`, token from env, read-only, paginated, rate-limit aware |
 | `jira-fixture` | `p1_resolved_within_sla_rate`, `backlog_age_p90_days` | `fixtures/jira/*.json`, seed 42 |
 | `salesforce-fixture` | `case_csat_avg`, `case_first_response_hours_p50` | `fixtures/salesforce/*.json`, seed 42 |
 | `snowflake-fixture` | `nightly_load_completed_at`, `row_count_delta_pct` | `fixtures/snowflake/*.json`, seed 42 |
@@ -131,7 +131,7 @@ Errors are RFC 9457 problem details. No auth in v0 (single-tenant PoC, documente
 | Outcome | Rule | Tiers |
 |---|---|---|
 | Sprint milestones closed by due date | `Deadline(milestone_closed_at ≤ due)` per milestone | 100% / clawback 20% |
-| CI pass rate on `main`, trailing 30 d | `WindowedRate(ci_runs_passed / ci_runs_total ≥ 0.95)` | ≥95%: 100 · ≥90%: 60 · else clawback 10% |
+| CI pass rate on `main`, trailing 30 d | `WindowedRate(ci_pass_rate payload {numerator, denominator} ≥ 0.95)` | ≥95%: 100 · ≥90%: 60 · else clawback 10% |
 | PR median hours to merge, trailing 30 d | `Threshold(≤ 72)` | ≤72: 100 · ≤120: 50 · else 0 |
 | Open `type:bug` issues older than 7 d | `Threshold(== 0)` | 0: 100 · else 0, clawback 5% |
 

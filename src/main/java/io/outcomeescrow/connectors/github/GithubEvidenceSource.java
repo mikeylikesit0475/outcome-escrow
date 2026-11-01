@@ -56,8 +56,7 @@ public class GithubEvidenceSource implements EvidenceSource {
     }
     String valueJson =
         switch (metric) {
-          case "ci_runs_passed" -> ciRuns(now, window, true);
-          case "ci_runs_total" -> ciRuns(now, window, false);
+          case "ci_pass_rate" -> ciRuns(now, window);
           case "pr_median_hours_to_merge" -> prMedian(now, window);
           case "milestone_closed_at" -> milestone(outcome);
           case "open_bugs_older_than_days" -> openBugs(now, outcome, window);
@@ -90,7 +89,7 @@ public class GithubEvidenceSource implements EvidenceSource {
     }
   }
 
-  private String ciRuns(Instant now, Window window, boolean passedOnly) {
+  private String ciRuns(Instant now, Window window) {
     try {
       JsonNode node = get(repoPath() + "/actions/runs?branch=main&per_page=100");
       int total = 0;
@@ -120,11 +119,9 @@ public class GithubEvidenceSource implements EvidenceSource {
           }
         }
       }
-      int value = passedOnly ? passed : total;
-      return "{\"value\":" + value + "}";
+      return "{\"numerator\":" + passed + ",\"denominator\":" + total + "}";
     } catch (Exception e) {
-      LOG.warn(
-          "GitHub metric ci_runs {} failed: {}", passedOnly ? "passed" : "total", e.getMessage());
+      LOG.warn("GitHub metric ci_pass_rate failed: {}", e.getMessage());
       return null;
     }
   }

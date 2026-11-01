@@ -19,16 +19,16 @@ outcomes:
       tiers:
         - minimumScore: 10000
           payoutBasisPoints: 10000
-  - id: self-ci-runs-passed
-    name: CI runs passed on main
+  - id: self-ci-pass-rate
+    name: CI pass rate on main
     connector: github
-    metric: ci_runs_passed
+    metric: ci_pass_rate
     windowDays: 30
     value: 1000
     rule:
       type: WindowedRate
-      numeratorMetric: ci_runs_passed
-      denominatorMetric: ci_runs_total
+      numeratorMetric: ci_pass_rate
+      denominatorMetric: ci_pass_rate
       operator: AT_LEAST
       target: 0.95
     tiers:
@@ -40,25 +40,6 @@ outcomes:
         - minimumScore: 9000
           payoutBasisPoints: 6000
         - minimumScore: 9500
-          payoutBasisPoints: 10000
-  - id: self-ci-runs-total
-    name: CI runs total on main
-    connector: github
-    metric: ci_runs_total
-    windowDays: 30
-    value: 1000
-    rule:
-      type: Threshold
-      metric: ci_runs_total
-      operator: AT_LEAST
-      target: 1.0
-    tiers:
-      floorScore: 0
-      clawbackBasisPointsBelowFloor: 0
-      tiers:
-        - minimumScore: 0
-          payoutBasisPoints: 0
-        - minimumScore: 10000
           payoutBasisPoints: 10000
   - id: self-pr-median-hours
     name: PR median hours to merge
