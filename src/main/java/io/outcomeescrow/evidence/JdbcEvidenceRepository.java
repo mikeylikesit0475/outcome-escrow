@@ -78,12 +78,12 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
 
   @Override
   public List<EvidenceRecord> findByOutcome(String outcomeId) {
-    return query(" where outcome_id = :criteria", "outcomeId", outcomeId);
+    return query(" where outcome_id = :outcomeId", "outcomeId", outcomeId);
   }
 
   @Override
   public List<EvidenceRecord> findByContract(String contractId) {
-    return query(" where contract_id = :criteria", "contractId", contractId);
+    return query(" where contract_id = :contractId", "contractId", contractId);
   }
 
   private List<EvidenceRecord> query(String whereClause, String paramName, String value) {
