@@ -171,4 +171,91 @@ class AppendOnlyRepositoryTests {
             "p2", "ik-1", "escrow", "vendor", 1000L, "USD", Instant.parse("2026-01-01T00:00:00Z"));
     assertEquals(false, postingRepository.append(duplicate));
   }
+
+  @Test
+  void evidenceChainVerifiesAfterAppend() {
+    jdbcClient
+        .sql(
+            "insert into contracts (id, name, currency) values ('c-chain', 'chain', 'USD') on conflict (id) do nothing")
+        .update();
+    jdbcClient
+        .sql(
+            "insert into outcomes (id, contract_id, name, rule, milestone_minor, currency) values ('o-chain', 'c-chain', 'chain', 'rule', 1000, 'USD') on conflict (id) do nothing")
+        .update();
+    evidenceRepository.append(
+        new EvidenceRecord(
+            "e-chain-1",
+            "c-chain",
+            "o1",
+            "fixture",
+            "ref-chain-1",
+            Instant.parse("2026-01-01T00:00:00Z"),
+            "{\"value\":1}",
+            "ignored",
+            null,
+            false));
+    evidenceRepository.append(
+        new EvidenceRecord(
+            "e-chain-2",
+            "c-chain",
+            "o1",
+            "fixture",
+            "ref-chain-2",
+            Instant.parse("2026-01-02T00:00:00Z"),
+            "{\"value\":2}",
+            "ignored",
+            null,
+            false));
+
+    assertTrue(evidenceRepository.verify("c-chain").valid());
+    assertEquals(2, evidenceRepository.verify("c-chain").length());
+  }
+
+  @Test
+  void tamperedEvidenceHashFailsVerify() {
+    jdbcClient
+        .sql(
+            "insert into contracts (id, name, currency) values ('c-tamper', 'tamper', 'USD') on conflict (id) do nothing")
+        .update();
+    jdbcClient
+        .sql(
+            "insert into outcomes (id, contract_id, name, rule, milestone_minor, currency) values ('o-tamper', 'c-tamper', 'tamper', 'rule', 1000, 'USD') on conflict (id) do nothing")
+        .update();
+    evidenceRepository.append(
+        new EvidenceRecord(
+            "e-tamper-1",
+            "c-tamper",
+            "o1",
+            "fixture",
+            "ref-tamper-1",
+            Instant.parse("2026-01-01T00:00:00Z"),
+            "{\"value\":1}",
+            "ignored",
+            null,
+            false));
+
+    jdbcClient
+        .sql(
+            """
+            insert into evidence (
+              id, contract_id, outcome_id, source, source_ref, captured_at, payload, hash, prev_hash, synthetic, seq
+            ) values (
+              :id, :contractId, :outcomeId, :source, :sourceRef, :capturedAt, :payload, :hash, :prevHash, :synthetic, :seq
+            )
+            """)
+        .param("id", "e-tampered-2")
+        .param("contractId", "c-tamper")
+        .param("outcomeId", "o-tamper")
+        .param("source", "fixture")
+        .param("sourceRef", "ref-tampered-2")
+        .param("capturedAt", java.sql.Timestamp.from(Instant.parse("2026-01-02T00:00:00Z")))
+        .param("payload", "{\"value\":2}")
+        .param("hash", "0000000000000000000000000000000000000000000000000000000000000000")
+        .param("prevHash", "ignored")
+        .param("synthetic", false)
+        .param("seq", 2L)
+        .update();
+
+    org.junit.jupiter.api.Assertions.assertFalse(evidenceRepository.verify("c-tamper").valid());
+  }
 }

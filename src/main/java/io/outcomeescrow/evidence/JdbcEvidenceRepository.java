@@ -1,6 +1,7 @@
 package io.outcomeescrow.evidence;
 
 import java.util.List;
+import java.util.Objects;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,46 +28,51 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
   @Transactional
   @Override
   public void append(EvidenceRecord record) {
-    String id = record.id();
-    if (id == null || id.isBlank()) {
-      id = java.util.UUID.randomUUID().toString();
+    if (record == null) {
+      throw new IllegalArgumentException("record is required");
     }
     jdbcClient
         .sql("select 1 from contracts where id = :contractId for update")
         .param("contractId", record.contractId())
         .query(Integer.class)
         .optional();
-    String prevHash =
+
+    long seq =
         jdbcClient
             .sql(
                 """
-                select hash
+                select coalesce(max(seq), 0) + 1
                 from evidence
                 where contract_id = :contractId
-                order by captured_at desc, ctid desc
-                limit 1
                 """)
             .param("contractId", record.contractId())
-            .query(String.class)
-            .optional()
-            .orElse(null);
+            .query(Long.class)
+            .single();
+
+    String computedHash = sha256(record.payload() == null ? "" : record.payload());
     EvidenceRecord normalized =
         new EvidenceRecord(
-            id,
+            record.id() == null || record.id().isBlank()
+                ? java.util.UUID.randomUUID().toString()
+                : record.id(),
             record.contractId(),
             record.outcomeId(),
             record.source(),
             record.sourceRef(),
             record.capturedAt(),
             record.payload(),
-            record.hash(),
-            prevHash,
+            computedHash,
+            hashOfPrevious(record.contractId()),
             record.synthetic());
+
     jdbcClient
         .sql(
             """
-            insert into evidence (id, contract_id, outcome_id, source, source_ref, captured_at, payload, hash, prev_hash, synthetic)
-            values (:id, :contractId, :outcomeId, :source, :sourceRef, :capturedAt, :payload, :hash, :prevHash, :synthetic)
+            insert into evidence (
+              id, contract_id, outcome_id, source, source_ref, captured_at, payload, hash, prev_hash, synthetic, seq
+            ) values (
+              :id, :contractId, :outcomeId, :source, :sourceRef, :capturedAt, :payload, :hash, :prevHash, :synthetic, :seq
+            )
             """)
         .param("id", normalized.id())
         .param("contractId", normalized.contractId())
@@ -78,25 +84,41 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
         .param("hash", normalized.hash())
         .param("prevHash", normalized.prevHash())
         .param("synthetic", normalized.synthetic())
+        .param("seq", seq)
         .update();
+  }
+
+  private String hashOfPrevious(String contractId) {
+    return jdbcClient
+        .sql(
+            """
+            select hash
+            from evidence
+            where contract_id = :contractId
+            order by seq desc
+            limit 1
+            """)
+        .param("contractId", contractId)
+        .query(String.class)
+        .optional()
+        .orElse(null);
   }
 
   @Override
   public List<EvidenceRecord> findByOutcome(String outcomeId) {
-    return query(" where outcome_id = :outcomeId", "outcomeId", outcomeId);
+    return query(" where outcome_id = :outcomeId order by captured_at, id", "outcomeId", outcomeId);
   }
 
   @Override
   public List<EvidenceRecord> findByContract(String contractId) {
-    return query(" where contract_id = :contractId", "contractId", contractId);
+    return query(" where contract_id = :contractId order by seq", "contractId", contractId);
   }
 
-  private List<EvidenceRecord> query(String whereClause, String paramName, String value) {
+  private List<EvidenceRecord> query(String fragment, String paramName, String value) {
     return jdbcClient
         .sql(
             "select id, contract_id, outcome_id, source, source_ref, captured_at, payload, hash, prev_hash, synthetic from evidence"
-                + whereClause
-                + " order by captured_at, ctid")
+                + fragment)
         .param(paramName, value)
         .query(
             (rs, rowNum) ->
@@ -116,65 +138,50 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
 
   @Override
   public VerificationResult verify(String contractId) {
-    List<EvidenceRecord> rows =
+    List<EvidenceChainRow> rows =
         jdbcClient
             .sql(
                 """
-                select id, contract_id, outcome_id, source, source_ref, captured_at, payload, hash, prev_hash, synthetic
+                select seq, hash, prev_hash, payload
                 from evidence
                 where contract_id = :contractId
-                order by captured_at, ctid
+                order by seq
                 """)
             .param("contractId", contractId)
             .query(
                 (rs, rowNum) ->
-                    new EvidenceRecord(
-                        rs.getString("id"),
-                        rs.getString("contract_id"),
-                        rs.getString("outcome_id"),
-                        rs.getString("source"),
-                        rs.getString("source_ref"),
-                        rs.getTimestamp("captured_at").toInstant(),
-                        rs.getString("payload"),
+                    new EvidenceChainRow(
+                        rs.getLong("seq"),
                         rs.getString("hash"),
                         rs.getString("prev_hash"),
-                        rs.getBoolean("synthetic")))
+                        rs.getString("payload")))
             .list();
     String previous = null;
     boolean valid = true;
-    for (EvidenceRecord row : rows) {
-      if (row.prevHash() != previous
-          && !(row.prevHash() != null && row.prevHash().equals(previous))) {
+    long expectedSeq = 1;
+    if (!rows.isEmpty() && rows.get(0).seq() != 1) {
+      valid = false;
+    }
+    for (EvidenceChainRow row : rows) {
+      if (!valid) {
+        break;
+      }
+      if (row.seq() != expectedSeq) {
         valid = false;
         break;
       }
-      if (isCanonicalHash(row.hash()) && !candidateMatches(row)) {
+      if (!sha256(row.payload()).equalsIgnoreCase(row.hash())) {
+        valid = false;
+        break;
+      }
+      if (row.prevHash() != previous && !Objects.equals(row.prevHash(), previous)) {
         valid = false;
         break;
       }
       previous = row.hash();
+      expectedSeq++;
     }
-    // adjust field
     return new VerificationResult(valid, rows.size());
-  }
-
-  private boolean isCanonicalHash(String hash) {
-    if (hash == null || hash.length() != 64) {
-      return false;
-    }
-    for (int i = 0; i < hash.length(); i++) {
-      char c = hash.charAt(i);
-      if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private boolean candidateMatches(EvidenceRecord row) {
-    String adapter = sha256(row.payload() + row.outcomeId() + row.capturedAt().toString());
-    String plain = sha256(row.payload());
-    return adapter.equalsIgnoreCase(row.hash()) || plain.equalsIgnoreCase(row.hash());
   }
 
   private static String sha256(String value) {
@@ -184,4 +191,6 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
           .formatHex(MD.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
   }
+
+  private record EvidenceChainRow(long seq, String hash, String prevHash, String payload) {}
 }
