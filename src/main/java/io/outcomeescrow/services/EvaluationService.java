@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,7 @@ public class EvaluationService {
   private final WebhookService webhookService;
   private final Clock clock;
   private final MeterRegistry meterRegistry;
+  private final Map<String, AtomicLong> chainLengthGauges = new ConcurrentHashMap<>();
 
   public EvaluationService(
       JdbcClient jdbcClient,
@@ -138,11 +141,16 @@ public class EvaluationService {
             .counter("ledger_postings_total", "kind", settlement.kind().name().toLowerCase())
             .increment();
       }
-      meterRegistry.gauge(
-          "evidence_chain_length",
-          Tags.of("contract", contractId),
-          evidenceRepository,
-          repo -> repo.findByContract(contractId).size());
+      AtomicLong chainLength =
+          chainLengthGauges.computeIfAbsent(
+              contractId,
+              key -> {
+                AtomicLong value = new AtomicLong(0L);
+                meterRegistry.gauge(
+                    "evidence_chain_length", Tags.of("contract", key), value, AtomicLong::get);
+                return value;
+              });
+      chainLength.set(evidenceRepository.findByContract(contractId).size());
 
       results.add(
           Map.of(
