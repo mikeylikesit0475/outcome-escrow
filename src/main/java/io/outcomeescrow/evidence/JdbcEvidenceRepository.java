@@ -106,7 +106,7 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
 
   @Override
   public List<EvidenceRecord> findByOutcome(String outcomeId) {
-    return query(" where outcome_id = :outcomeId order by captured_at, id", "outcomeId", outcomeId);
+    return query(" where outcome_id = :outcomeId order by seq, id", "outcomeId", outcomeId);
   }
 
   @Override

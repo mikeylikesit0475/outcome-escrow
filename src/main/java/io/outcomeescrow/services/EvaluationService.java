@@ -173,12 +173,7 @@ public class EvaluationService {
             params,
             window);
     List<EvidenceRecord> outcomeRecords = evidenceRepository.findByOutcome(row.id());
-    java.util.List<EvidenceRecord> orderedRecords =
-        outcomeRecords.stream()
-            .sorted(
-                java.util.Comparator.comparing(EvidenceRecord::capturedAt)
-                    .thenComparing(r -> r.hash() == null ? "" : r.hash()))
-            .toList();
+    java.util.List<EvidenceRecord> orderedRecords = outcomeRecords;
     int limit = Math.max(0, stored.evidenceCount());
     if (limit > orderedRecords.size()) {
       limit = orderedRecords.size();
