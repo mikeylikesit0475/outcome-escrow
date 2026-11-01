@@ -1,5 +1,7 @@
 package io.outcomeescrow.services;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.outcomeescrow.domain.Evidence;
 import io.outcomeescrow.domain.Outcome;
 import io.outcomeescrow.domain.RuleSpec;
@@ -33,6 +35,7 @@ public class EvaluationService {
   private final JdbcLedgerPostingRepository postingRepository;
   private final WebhookService webhookService;
   private final Clock clock;
+  private final MeterRegistry meterRegistry;
 
   public EvaluationService(
       JdbcClient jdbcClient,
@@ -40,13 +43,15 @@ public class EvaluationService {
       JdbcVerdictRepository verdictRepository,
       JdbcLedgerPostingRepository postingRepository,
       WebhookService webhookService,
-      Clock clock) {
+      Clock clock,
+      MeterRegistry meterRegistry) {
     this.jdbcClient = jdbcClient;
     this.evidenceRepository = evidenceRepository;
     this.verdictRepository = verdictRepository;
     this.postingRepository = postingRepository;
     this.webhookService = webhookService;
     this.clock = clock;
+    this.meterRegistry = meterRegistry;
   }
 
   @Transactional
@@ -127,6 +132,18 @@ public class EvaluationService {
           webhookService.send(event);
         }
       }
+      meterRegistry.counter("evaluations_total", "status", verdict.status().name()).increment();
+      if (posted) {
+        meterRegistry
+            .counter("ledger_postings_total", "kind", settlement.kind().name().toLowerCase())
+            .increment();
+      }
+      meterRegistry.gauge(
+          "evidence_chain_length",
+          Tags.of("contract", contractId),
+          evidenceRepository,
+          repo -> repo.findByContract(contractId).size());
+
       results.add(
           Map.of(
               "outcomeId", outcome.id(),
