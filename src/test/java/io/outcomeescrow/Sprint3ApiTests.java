@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.outcomeescrow.evidence.EvidenceRecord;
 import io.outcomeescrow.evidence.EvidenceRepository;
 import java.time.Instant;
@@ -39,6 +41,7 @@ class Sprint3ApiTests {
   @Autowired MockMvc mockMvc;
   @Autowired JdbcClient jdbcClient;
   @Autowired EvidenceRepository evidenceRepository;
+  @Autowired MeterRegistry meterRegistry;
 
   @Test
   void evaluateIsIdempotentAndReplayMatches() throws Exception {
@@ -114,5 +117,58 @@ class Sprint3ApiTests {
         .andExpect(status().isOk())
         .andExpect(content().string(org.hamcrest.Matchers.containsString("Settlement report")));
     mockMvc.perform(get("/v3/api-docs")).andExpect(status().isOk());
+  }
+
+  @Test
+  void gaugeReflectsLatestChainLength() throws Exception {
+    jdbcClient
+        .sql("insert into contracts (id, name, currency) values ('c-gauge', 'gauge', 'USD')")
+        .update();
+    jdbcClient
+        .sql(
+            """
+            insert into outcomes (id, contract_id, name, rule, rule_json, tiers_json, milestone_minor, currency, connector, metric, window_days, params)
+            values ('o-gauge', 'c-gauge', 'Gauge', '{}', :rule, :tiers, 1000, 'USD', 'fixture', 'metric', 30, null)
+            """)
+        .param(
+            "rule",
+            "{\"type\":\"Threshold\",\"metric\":\"metric\",\"operator\":\"AT_LEAST\",\"target\":1.0}")
+        .param(
+            "tiers",
+            "{\"floorScore\":0,\"clawbackBasisPointsBelowFloor\":0,\"tiers\":[{\"minimumScore\":0,\"payoutBasisPoints\":10000}]}")
+        .update();
+    evidenceRepository.append(
+        new EvidenceRecord(
+            null,
+            "c-gauge",
+            "o-gauge",
+            "fixture",
+            "ref-1",
+            Instant.parse("2026-01-01T00:00:00Z"),
+            "{\"value\":1}",
+            null,
+            null,
+            false));
+
+    mockMvc.perform(post("/contracts/c-gauge/evaluate")).andExpect(status().isOk());
+    Gauge gauge = meterRegistry.find("evidence_chain_length").tags("contract", "c-gauge").gauge();
+    org.junit.jupiter.api.Assertions.assertNotNull(gauge);
+    org.junit.jupiter.api.Assertions.assertEquals(1.0, gauge.value());
+
+    evidenceRepository.append(
+        new EvidenceRecord(
+            null,
+            "c-gauge",
+            "o-gauge",
+            "fixture",
+            "ref-2",
+            Instant.parse("2026-01-02T00:00:00Z"),
+            "{\"value\":1}",
+            null,
+            null,
+            false));
+
+    mockMvc.perform(post("/contracts/c-gauge/evaluate")).andExpect(status().isOk());
+    org.junit.jupiter.api.Assertions.assertEquals(2.0, gauge.value());
   }
 }
