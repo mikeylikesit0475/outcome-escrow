@@ -11,9 +11,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestClient;
 
 public class GithubEvidenceSource implements EvidenceSource {
+  private static final Logger LOG = LoggerFactory.getLogger(GithubEvidenceSource.class);
   public static final String BASE_URL = "https://api.github.com";
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private final RestClient client;
@@ -53,8 +56,8 @@ public class GithubEvidenceSource implements EvidenceSource {
     }
     String valueJson =
         switch (metric) {
-          case "ci_runs_passed" -> ciRuns(now, true);
-          case "ci_runs_total" -> ciRuns(now, false);
+          case "ci_runs_passed" -> ciRuns(now, window, true);
+          case "ci_runs_total" -> ciRuns(now, window, false);
           case "pr_median_hours_to_merge" -> prMedian(now, window);
           case "milestone_closed_at" -> milestone(outcome);
           case "open_bugs_older_than_days" -> openBugs(now, outcome, window);
@@ -63,8 +66,8 @@ public class GithubEvidenceSource implements EvidenceSource {
     if (valueJson == null) {
       return List.of();
     }
-    String hash = sha256(valueJson + outcome.id() + now);
-    return List.of(new Evidence(null, null, null, id(), metric, now, valueJson, hash, null, false));
+    return List.of(
+        new Evidence(null, null, outcome.id(), id(), metric, now, valueJson, null, null, false));
   }
 
   private String repoPath() {
@@ -87,17 +90,28 @@ public class GithubEvidenceSource implements EvidenceSource {
     }
   }
 
-  private String ciRuns(Instant now, boolean passedOnly) {
+  private String ciRuns(Instant now, Window window, boolean passedOnly) {
     try {
       JsonNode node = get(repoPath() + "/actions/runs?branch=main&per_page=100");
       int total = 0;
       int passed = 0;
+      Instant from = (window == null || window.from() == null) ? Instant.EPOCH : window.from();
+      Instant to = (window == null || window.to() == null) ? now : window.to();
       if (node != null && node.path("workflow_runs").isArray()) {
         for (JsonNode run : node.path("workflow_runs")) {
           if (!"completed".equals(run.path("status").asText())) {
             continue;
           }
           if (!"main".equals(run.path("head_branch").asText("main"))) {
+            continue;
+          }
+          Instant created;
+          try {
+            created = Instant.parse(run.path("created_at").asText());
+          } catch (Exception ignored) {
+            continue;
+          }
+          if (created.isBefore(from) || created.isAfter(to)) {
             continue;
           }
           total++;
@@ -109,6 +123,8 @@ public class GithubEvidenceSource implements EvidenceSource {
       int value = passedOnly ? passed : total;
       return "{\"value\":" + value + "}";
     } catch (Exception e) {
+      LOG.warn(
+          "GitHub metric ci_runs {} failed: {}", passedOnly ? "passed" : "total", e.getMessage());
       return null;
     }
   }
@@ -116,7 +132,12 @@ public class GithubEvidenceSource implements EvidenceSource {
   private String prMedian(Instant now, Window window) {
     try {
       JsonNode node = get(repoPath() + "/pulls?state=closed&per_page=100");
-      List<Long> durations = new ArrayList<>();
+      List<Double> durations = new ArrayList<>();
+      Instant from =
+          (window == null || window.from() == null)
+              ? Instant.parse("1970-01-01T00:00:00Z")
+              : window.from();
+      Instant to = (window == null || window.to() == null) ? Instant.now() : window.to();
       if (node != null && node.isArray()) {
         for (JsonNode pr : node) {
           if (pr.path("merged_at").isNull() || pr.path("merged_at").isMissingNode()) {
@@ -124,25 +145,26 @@ public class GithubEvidenceSource implements EvidenceSource {
           }
           Instant merged = Instant.parse(pr.path("merged_at").asText());
           Instant created = Instant.parse(pr.path("created_at").asText());
-          if (merged.isBefore(window.from()) || merged.isAfter(window.to())) {
+          if (merged.isBefore(from) || merged.isAfter(to)) {
             continue;
           }
-          durations.add(java.time.Duration.between(created, merged).toHours());
+          durations.add(java.time.Duration.between(created, merged).toMinutes() / 60.0);
         }
       }
       if (durations.isEmpty()) {
-        return "{\"value\":0}";
+        return "{\"value\":0.0}";
       }
       durations.sort(Comparator.naturalOrder());
-      long median;
+      double median;
       if (durations.size() % 2 == 0) {
         median =
-            (durations.get(durations.size() / 2 - 1) + durations.get(durations.size() / 2)) / 2;
+            (durations.get(durations.size() / 2 - 1) + durations.get(durations.size() / 2)) / 2.0;
       } else {
         median = durations.get(durations.size() / 2);
       }
       return "{\"value\":" + median + "}";
     } catch (Exception e) {
+      LOG.warn("GitHub metric pr_median_hours_to_merge failed: {}", e.getMessage());
       return null;
     }
   }
@@ -164,14 +186,15 @@ public class GithubEvidenceSource implements EvidenceSource {
           String number = String.valueOf(item.path("number").asInt(-1));
           if (wanted.equals(title) || wanted.equals(number)) {
             if (item.path("closed_at").isNull() || item.path("closed_at").isMissingNode()) {
-              return "{\"eventAt\":null}";
+              return null;
             }
             return "{\"eventAt\":\"" + item.path("closed_at").asText() + "\"}";
           }
         }
       }
-      return "{\"eventAt\":null}";
+      return null;
     } catch (Exception e) {
+      LOG.warn("GitHub metric milestone_closed_at failed: {}", e.getMessage());
       return null;
     }
   }
@@ -206,6 +229,7 @@ public class GithubEvidenceSource implements EvidenceSource {
       }
       return "{\"value\":" + count + "}";
     } catch (Exception e) {
+      LOG.warn("GitHub metric open_bugs_older_than_days failed: {}", e.getMessage());
       return null;
     }
   }

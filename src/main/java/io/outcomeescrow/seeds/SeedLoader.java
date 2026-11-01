@@ -28,9 +28,30 @@ public class SeedLoader implements ApplicationRunner {
         "milestone_closed_at",
         "{\"milestone\":\"Sprint 1\"}",
         30);
-    outcome("self-delivery", "self-ci-runs-passed", "CI runs passed on main", "github", "ci_runs_passed", null, 30);
-    outcome("self-delivery", "self-ci-runs-total", "CI runs total on main", "github", "ci_runs_total", null, 30);
-    outcome("self-delivery", "self-pr-median-hours", "PR median hours to merge", "github", "pr_median_hours_to_merge", null, 30);
+    outcome(
+        "self-delivery",
+        "self-ci-runs-passed",
+        "CI runs passed on main",
+        "github",
+        "ci_runs_passed",
+        null,
+        30);
+    outcome(
+        "self-delivery",
+        "self-ci-runs-total",
+        "CI runs total on main",
+        "github",
+        "ci_runs_total",
+        null,
+        30);
+    outcome(
+        "self-delivery",
+        "self-pr-median-hours",
+        "PR median hours to merge",
+        "github",
+        "pr_median_hours_to_merge",
+        null,
+        30);
     outcome(
         "self-delivery",
         "self-open-bugs-older-than-seven-days",
@@ -41,9 +62,30 @@ public class SeedLoader implements ApplicationRunner {
         30);
 
     seedContract("acme-vendor", "Acme vendor demo contract", "USD");
-    outcome("acme-vendor", "acme-jira-p1-sla", "Jira P1 resolved within SLA", "jira-fixture", "p1_resolved_within_sla_rate", null, 30);
-    outcome("acme-vendor", "acme-salesforce-csat", "Salesforce case CSAT average", "salesforce-fixture", "case_csat_avg", null, 30);
-    outcome("acme-vendor", "acme-snowflake-load", "Snowflake nightly load completed", "snowflake-fixture", "nightly_load_completed_at", null, 30);
+    outcome(
+        "acme-vendor",
+        "acme-jira-p1-sla",
+        "Jira P1 resolved within SLA",
+        "jira-fixture",
+        "p1_resolved_within_sla_rate",
+        null,
+        30);
+    outcome(
+        "acme-vendor",
+        "acme-salesforce-csat",
+        "Salesforce case CSAT average",
+        "salesforce-fixture",
+        "case_csat_avg",
+        null,
+        30);
+    outcome(
+        "acme-vendor",
+        "acme-snowflake-load",
+        "Snowflake nightly load completed",
+        "snowflake-fixture",
+        "nightly_load_completed_at",
+        null,
+        30);
   }
 
   private void seedContract(String id, String name, String currency) {
