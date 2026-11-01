@@ -148,6 +148,7 @@ Each sprint lists its **GitHub-flow checklist** — the steps of the nine-step f
 | D-06 | 2026-10-31 | GitHub is the only live connector; Jira/Salesforce/Snowflake are seeded fixtures | Time-to-finished is the binding constraint; no credentials exist for the others | Fixtures labeled synthetic everywhere; port makes live adapters a drop-in |
 | D-07 | 2026-10-31 | Dogfood contract `self-delivery` is in scope | It makes step 9 (observe → issues) real instead of staged | Observe workflow needs `issues: write`; breach thresholds must be realistic for a solo repo |
 | D-08 | 2026-10-31 | `main` has three non-PR commits (`404832e` auto-generated initial commit, `667fd18` bootstrap, `da3b75e` merge of the two) instead of the one allowed by D-03 | Cause: repo created with auto-init. Consequence: none going forward; recorded, not rewritten (no force-push, ruleset forbids it) | All later changes still go through PRs; history is recorded, not rewritten |
+| D-09 | 2026-10-31 | Release tags (`v*`) are immutable once pushed: tag ruleset `protect-release-tags` blocks deletion and updates | Sprint 4 moved the `v0.1.0` tag three times to fix the release workflow; tags no longer move — a workflow bug ships as a new patch tag (`v0.1.1`) | No `[skip ci]` tag rewrite in release.yml; release tags can only be created, never re-pointed |
 
 ## Interview Stories
 
