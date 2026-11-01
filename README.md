@@ -58,7 +58,7 @@ curl -s http://localhost:8080/actuator/prometheus | grep evaluations_total
 
 ## GitHub flow
 
-Every change lands through a branch, draft PR, CI, review and squash merge. Example: [PR #75](https://github.com/mikeylikesit0475/outcome-escrow/pull/75) carried Sprint 3 settlement and was merged with green checks. CI runs are visible under [Actions](https://github.com/mikeylikesit0475/outcome-escrow/actions).
+Every change lands through a branch, draft PR, CI, review and squash merge. Example: [PR #75](https://github.com/mikeylikesit0475/outcome-escrow/pull/75) carried Sprint 3 settlement and was merged with green checks. A green run on a later ready PR is [run 41266454264](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41266454264); the v0.1.0 release run is [41264810544](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41264810544), published on the [v0.1.0 release page](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.0).
 
 - Plan: [`MASTER_SCRUM.md`](MASTER_SCRUM.md)
 - Design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
