@@ -31,6 +31,11 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
     if (id == null || id.isBlank()) {
       id = java.util.UUID.randomUUID().toString();
     }
+    jdbcClient
+        .sql("select 1 from contracts where id = :contractId for update")
+        .param("contractId", record.contractId())
+        .query(Integer.class)
+        .optional();
     String prevHash =
         jdbcClient
             .sql(
@@ -38,7 +43,7 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
                 select hash
                 from evidence
                 where contract_id = :contractId
-                order by captured_at desc, id desc
+                order by captured_at desc, ctid desc
                 limit 1
                 """)
             .param("contractId", record.contractId())
@@ -91,7 +96,7 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
         .sql(
             "select id, contract_id, outcome_id, source, source_ref, captured_at, payload, hash, prev_hash, synthetic from evidence"
                 + whereClause
-                + " order by captured_at, id")
+                + " order by captured_at, ctid")
         .param(paramName, value)
         .query(
             (rs, rowNum) ->
@@ -118,7 +123,7 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
                 select id, contract_id, outcome_id, source, source_ref, captured_at, payload, hash, prev_hash, synthetic
                 from evidence
                 where contract_id = :contractId
-                order by captured_at, id
+                order by captured_at, ctid
                 """)
             .param("contractId", contractId)
             .query(
