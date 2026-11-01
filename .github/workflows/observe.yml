@@ -8,7 +8,7 @@ on:
       image_tag:
         description: "Released image tag to run"
         required: false
-        default: "v0.1.0"
+        default: "v0.1.1"
         type: string
 
 permissions:
@@ -39,14 +39,20 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
     steps:
       - name: Start released image
+        env:
+          IMAGE_TAG: ${{ github.event.inputs.image_tag || 'v0.1.1' }}
         run: |
-          docker pull ghcr.io/mikeylikesit0475/outcome-escrow:${{ github.event.inputs.image_tag || 'v0.1.0' }}
+          if [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "invalid image tag: $IMAGE_TAG" >&2
+            exit 1
+          fi
+          docker pull "ghcr.io/mikeylikesit0475/outcome-escrow:${IMAGE_TAG}"
           docker run -d --name outcome-escrow --network host \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/outcomeescrow \
             -e SPRING_DATASOURCE_USERNAME=outcome \
             -e SPRING_DATASOURCE_PASSWORD=outcome \
             -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
-            ghcr.io/mikeylikesit0475/outcome-escrow:${{ github.event.inputs.image_tag || 'v0.1.0' }}
+            "ghcr.io/mikeylikesit0475/outcome-escrow:${IMAGE_TAG}"
       - name: Pull, evaluate and file issues
         env:
           GH_TOKEN: ${{ github.token }}
