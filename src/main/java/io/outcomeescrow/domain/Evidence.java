@@ -17,12 +17,11 @@ public record Evidence(
     if (source == null || source.isBlank()) {
       throw new IllegalArgumentException("source is required");
     }
-    if (hash == null || hash.isBlank()) {
-      throw new IllegalArgumentException("hash is required");
-    }
     if (capturedAt == null) {
       capturedAt = Instant.EPOCH;
     }
+    hash = (hash == null || hash.isBlank()) ? null : hash;
+    prevHash = (prevHash == null || prevHash.isBlank()) ? null : prevHash;
   }
 
   public Evidence(
