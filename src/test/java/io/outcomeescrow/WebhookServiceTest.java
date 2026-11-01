@@ -7,7 +7,6 @@ import com.sun.net.httpserver.HttpServer;
 import io.outcomeescrow.services.WebhookService;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,8 +40,7 @@ class WebhookServiceTest {
       WebhookService service = new WebhookService("http://localhost:" + port + "/hook", secret);
       assertTrue(service.send(payload));
 
-      String expected =
-          "sha256=" + hmacBase64(secret, capturedBody.toString());
+      String expected = "sha256=" + hmacBase64(secret, capturedBody.toString());
       assertEquals(expected, capturedSignature.toString());
     } finally {
       server.stop(0);
