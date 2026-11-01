@@ -12,7 +12,7 @@ outcomes:
       type: Threshold
       metric: p1_resolved_within_sla_rate
       operator: AT_LEAST
-      target: 0.9
+      target: 0.95
     tiers:
       floorScore: 8000
       clawbackBasisPointsBelowFloor: 1000
