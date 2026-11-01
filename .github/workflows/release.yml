@@ -64,7 +64,13 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "${GITHUB_REF_NAME}" --generate-notes --verify-tag
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "invalid release tag: $TAG" >&2
+            exit 1
+          fi
+          gh release create "$TAG" --generate-notes --verify-tag
 
   smoke-deploy:
     name: smoke deploy
@@ -82,19 +88,23 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+    env:
+      TAG: ${{ github.ref_name }}
     steps:
-      - name: Tag name
-        id: tag
-        run: echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
       - name: Pull image
-        run: docker pull "ghcr.io/mikeylikesit0475/outcome-escrow:${{ steps.tag.outputs.tag }}"
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "invalid release tag: $TAG" >&2
+            exit 1
+          fi
+          docker pull "ghcr.io/mikeylikesit0475/outcome-escrow:$TAG"
       - name: Run released image
         run: |
           docker run -d --name outcome-escrow --network host \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/postgres \
             -e SPRING_DATASOURCE_USERNAME=postgres \
             -e SPRING_DATASOURCE_PASSWORD=postgres \
-            "ghcr.io/mikeylikesit0475/outcome-escrow:${{ steps.tag.outputs.tag }}"
+            "ghcr.io/mikeylikesit0475/outcome-escrow:$TAG"
       - name: Poll health
         run: |
           set -euo pipefail
