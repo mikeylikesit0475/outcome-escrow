@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 */6 * * *"
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Released image tag to run"
+        required: false
+        default: "v0.1.0"
+        type: string
 
 permissions:
   contents: read
@@ -34,13 +40,13 @@ jobs:
     steps:
       - name: Start released image
         run: |
-          docker pull ghcr.io/mikeylikesit0475/outcome-escrow:v0.1.0
+          docker pull ghcr.io/mikeylikesit0475/outcome-escrow:${{ github.event.inputs.image_tag || 'v0.1.0' }}
           docker run -d --name outcome-escrow --network host \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/outcomeescrow \
             -e SPRING_DATASOURCE_USERNAME=outcome \
             -e SPRING_DATASOURCE_PASSWORD=outcome \
             -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
-            ghcr.io/mikeylikesit0475/outcome-escrow:v0.1.0
+            ghcr.io/mikeylikesit0475/outcome-escrow:${{ github.event.inputs.image_tag || 'v0.1.0' }}
       - name: Pull, evaluate and file issues
         env:
           GH_TOKEN: ${{ github.token }}
