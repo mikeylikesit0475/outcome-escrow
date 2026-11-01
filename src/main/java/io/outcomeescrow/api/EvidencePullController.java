@@ -2,6 +2,7 @@ package io.outcomeescrow.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.outcomeescrow.domain.Outcome;
 import io.outcomeescrow.domain.RuleSpec;
 import io.outcomeescrow.domain.TierTable;
@@ -11,6 +12,7 @@ import io.outcomeescrow.evidence.EvidenceRepository;
 import io.outcomeescrow.evidence.EvidenceSource;
 import io.outcomeescrow.evidence.EvidenceSourceRegistry;
 import io.outcomeescrow.seeds.OutcomeJson;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -24,15 +26,18 @@ public class EvidencePullController {
   private final JdbcClient jdbcClient;
   private final EvidenceSourceRegistry registry;
   private final EvidenceRepository evidenceRepository;
+  private final MeterRegistry meterRegistry;
   private final ObjectMapper mapper = new ObjectMapper();
 
   public EvidencePullController(
       JdbcClient jdbcClient,
       EvidenceSourceRegistry registry,
-      EvidenceRepository evidenceRepository) {
+      EvidenceRepository evidenceRepository,
+      MeterRegistry meterRegistry) {
     this.jdbcClient = jdbcClient;
     this.registry = registry;
     this.evidenceRepository = evidenceRepository;
+    this.meterRegistry = meterRegistry;
   }
 
   @PostMapping("/contracts/{contractId}/evidence:pull")
@@ -83,7 +88,13 @@ public class EvidencePullController {
               outcome.metric(),
               params,
               window);
-      for (io.outcomeescrow.domain.Evidence evidence : source.fetch(domainOutcome, window, now)) {
+      long fetchStart = System.nanoTime();
+      java.util.List<io.outcomeescrow.domain.Evidence> fetched =
+          source.fetch(domainOutcome, window, now);
+      meterRegistry
+          .timer("connector_fetch_seconds", "connector", outcome.connector())
+          .record(Duration.ofNanos(System.nanoTime() - fetchStart));
+      for (io.outcomeescrow.domain.Evidence evidence : fetched) {
         evidenceRepository.append(
             new EvidenceRecord(
                 evidence.id() == null || evidence.id().isBlank()
