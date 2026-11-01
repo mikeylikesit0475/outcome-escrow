@@ -1,7 +1,16 @@
 package io.outcomeescrow.seeds;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.outcomeescrow.domain.RuleSpec;
+import io.outcomeescrow.domain.TierTable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -13,114 +22,140 @@ public class SeedLoader implements ApplicationRunner {
     this.jdbcClient = jdbcClient;
   }
 
+  public record ContractYaml(String id, String name, String currency, List<OutcomeYaml> outcomes) {}
+
+  public record OutcomeYaml(
+      String id,
+      String name,
+      String connector,
+      String metric,
+      Integer windowDays,
+      Map<String, String> params,
+      long value,
+      RuleYaml rule,
+      TierTableYaml tiers) {}
+
+  public record RuleYaml(
+      String type,
+      String metric,
+      String operator,
+      double target,
+      String numeratorMetric,
+      String denominatorMetric,
+      String eventMetric,
+      String dueAt) {}
+
+  public record TierTableYaml(
+      int floorScore, int clawbackBasisPointsBelowFloor, List<TierYaml> tiers) {}
+
+  public record TierYaml(int minimumScore, int payoutBasisPoints) {}
+
   @Override
   public void run(ApplicationArguments args) {
     Long count = jdbcClient.sql("select count(*) from contracts").query(Long.class).single();
     if (count != null && count > 0) {
       return;
     }
-    seedContract("self-delivery", "Outcome Escrow self-delivery", "USD");
-    outcome(
-        "self-delivery",
-        "self-sprint-1-milestones",
-        "Sprint milestones closed by due date",
-        "github",
-        "milestone_closed_at",
-        "{\"milestone\":\"Sprint 1\"}",
-        30);
-    outcome(
-        "self-delivery",
-        "self-ci-runs-passed",
-        "CI runs passed on main",
-        "github",
-        "ci_runs_passed",
-        null,
-        30);
-    outcome(
-        "self-delivery",
-        "self-ci-runs-total",
-        "CI runs total on main",
-        "github",
-        "ci_runs_total",
-        null,
-        30);
-    outcome(
-        "self-delivery",
-        "self-pr-median-hours",
-        "PR median hours to merge",
-        "github",
-        "pr_median_hours_to_merge",
-        null,
-        30);
-    outcome(
-        "self-delivery",
-        "self-open-bugs-older-than-seven-days",
-        "Open bug issues older than seven days",
-        "github",
-        "open_bugs_older_than_days",
-        "{\"days\":\"7\"}",
-        30);
-
-    seedContract("acme-vendor", "Acme vendor demo contract", "USD");
-    outcome(
-        "acme-vendor",
-        "acme-jira-p1-sla",
-        "Jira P1 resolved within SLA",
-        "jira-fixture",
-        "p1_resolved_within_sla_rate",
-        null,
-        30);
-    outcome(
-        "acme-vendor",
-        "acme-salesforce-csat",
-        "Salesforce case CSAT average",
-        "salesforce-fixture",
-        "case_csat_avg",
-        null,
-        30);
-    outcome(
-        "acme-vendor",
-        "acme-snowflake-load",
-        "Snowflake nightly load completed",
-        "snowflake-fixture",
-        "nightly_load_completed_at",
-        null,
-        30);
+    ObjectMapper yaml = new ObjectMapper(new YAMLFactory());
+    PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+    Resource[] resources;
+    try {
+      resources = resolver.getResources("classpath:contracts/*.yaml");
+      Arrays.sort(resources, (a, b) -> a.getFilename().compareTo(b.getFilename()));
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
+    for (Resource resource : resources) {
+      try {
+        ContractYaml contract = yaml.readValue(resource.getInputStream(), ContractYaml.class);
+        seedContract(contract);
+      } catch (Exception e) {
+        throw new IllegalStateException("could not seed " + resource.getFilename(), e);
+      }
+    }
   }
 
-  private void seedContract(String id, String name, String currency) {
+  private void seedContract(ContractYaml contract) {
     jdbcClient
         .sql("insert into contracts (id, name, currency) values (:id, :name, :currency)")
-        .param("id", id)
-        .param("name", name)
-        .param("currency", currency)
+        .param("id", contract.id())
+        .param("name", contract.name())
+        .param("currency", contract.currency())
         .update();
+
+    for (OutcomeYaml outcome : contract.outcomes()) {
+      insertOutcome(contract.id(), contract.currency(), outcome);
+    }
   }
 
-  private void outcome(
-      String contractId,
-      String id,
-      String name,
-      String connector,
-      String metric,
-      String params,
-      int windowDays) {
+  private void insertOutcome(String contractId, String currency, OutcomeYaml source) {
+    RuleSpec ruleSpec = toRule(source.rule());
+    TierTable tierTable = toTiers(source.tiers());
+    String rawParams = source.params() == null ? null : SeedLoader.paramsJson(source.params());
     jdbcClient
         .sql(
             """
-            insert into outcomes (id, contract_id, name, rule, milestone_minor, currency, connector, metric, window_days, params)
-            values (:id, :contractId, :name, :rule, :milestoneMinor, :currency, :connector, :metric, :windowDays, :params)
+            insert into outcomes (
+              id, contract_id, name, rule, rule_json, tiers_json, milestone_minor, currency,
+              connector, metric, window_days, params
+            ) values (
+              :id, :contractId, :name, :rule, :ruleJson, :tiersJson, :value, :currency,
+              :connector, :metric, :windowDays, :params
+            )
             """)
-        .param("id", id)
+        .param("id", source.id())
         .param("contractId", contractId)
-        .param("name", name)
-        .param("rule", "UNSET")
-        .param("milestoneMinor", 1000L)
-        .param("currency", "USD")
-        .param("connector", connector)
-        .param("metric", metric)
-        .param("windowDays", windowDays)
-        .param("params", params)
+        .param("name", source.name())
+        .param("rule", OutcomeJson.ruleJson(ruleSpec))
+        .param("ruleJson", OutcomeJson.ruleJson(ruleSpec))
+        .param("tiersJson", OutcomeJson.tierJson(tierTable))
+        .param("value", source.value())
+        .param("currency", currency)
+        .param("connector", source.connector())
+        .param("metric", source.metric())
+        .param("windowDays", source.windowDays() == null ? 30 : source.windowDays())
+        .param("params", rawParams)
         .update();
+  }
+
+  private RuleSpec toRule(RuleYaml yaml) {
+    if (yaml == null || yaml.type() == null || yaml.type().isBlank()) {
+      return null;
+    }
+    return switch (yaml.type()) {
+      case "Threshold" ->
+          new RuleSpec.Threshold(
+              yaml.metric() == null || yaml.metric().isBlank() ? "" : yaml.metric(),
+              RuleSpec.Operator.valueOf(yaml.operator()),
+              yaml.target());
+      case "WindowedRate" ->
+          new RuleSpec.WindowedRate(
+              yaml.numeratorMetric(),
+              yaml.denominatorMetric(),
+              RuleSpec.Operator.valueOf(yaml.operator()),
+              yaml.target());
+      case "Deadline" ->
+          new RuleSpec.Deadline(yaml.eventMetric(), java.time.Instant.parse(yaml.dueAt()));
+      default -> throw new IllegalArgumentException("unknown rule: " + yaml.type());
+    };
+  }
+
+  private TierTable toTiers(TierTableYaml yaml) {
+    if (yaml == null) {
+      return null;
+    }
+    List<TierTable.Tier> tiers =
+        yaml.tiers().stream()
+            .map(item -> new TierTable.Tier(item.minimumScore(), item.payoutBasisPoints()))
+            .toList();
+    return new TierTable(yaml.floorScore(), yaml.clawbackBasisPointsBelowFloor(), tiers);
+  }
+
+  static String paramsJson(Map<String, String> params) {
+    try {
+      return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(params);
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
   }
 }
