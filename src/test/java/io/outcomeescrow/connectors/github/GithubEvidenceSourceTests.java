@@ -35,10 +35,10 @@ class GithubEvidenceSourceTests {
 
     Outcome outcome =
         new Outcome(
-            "ci-total", "CI total", null, 0L, "USD", "github", "ci_runs_total", Map.of(), null);
+            "ci-total", "CI total", null, 0L, "USD", "github", "ci_pass_rate", Map.of(), null);
     Instant now = Instant.parse("2026-10-31T00:00:00Z");
     var result = source.fetch(outcome, Window.trailingDays(now, 30), now);
-    assertEquals("{\"value\":2}", result.get(0).payload());
+    assertEquals("{\"numerator\":1,\"denominator\":2}", result.get(0).payload());
   }
 
   @Test
@@ -63,10 +63,10 @@ class GithubEvidenceSourceTests {
 
     Outcome outcome =
         new Outcome(
-            "ci-passed", "CI passed", null, 0L, "USD", "github", "ci_runs_passed", Map.of(), null);
+            "ci-passed", "CI passed", null, 0L, "USD", "github", "ci_pass_rate", Map.of(), null);
     Instant now = Instant.parse(nowText);
     var result = source.fetch(outcome, Window.trailingDays(now, 30), now);
-    assertEquals("{\"value\":1}", result.get(0).payload());
+    assertEquals("{\"numerator\":1,\"denominator\":1}", result.get(0).payload());
   }
 
   @Test

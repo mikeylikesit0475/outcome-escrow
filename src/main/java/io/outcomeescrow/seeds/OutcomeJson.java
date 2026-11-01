@@ -46,25 +46,25 @@ public final class OutcomeJson {
 
   public static RuleSpec parseRule(String text) {
     try {
-      @SuppressWarnings("unchecked")
-      Map<String, Object> data = JSON.readValue(text == null ? "{}" : text, Map.class);
-      String type = String.valueOf(data.getOrDefault("type", ""));
+      com.fasterxml.jackson.databind.JsonNode data =
+          JSON.readTree(text == null || text.isBlank() ? "{}" : text);
+      String type = data.path("type").asText("");
       return switch (type) {
         case "Threshold" ->
             new RuleSpec.Threshold(
-                String.valueOf(data.get("metric")),
-                RuleSpec.Operator.valueOf(String.valueOf(data.get("operator"))),
-                ((Number) data.get("target")).doubleValue());
+                data.path("metric").asText(),
+                RuleSpec.Operator.valueOf(data.path("operator").asText()),
+                data.path("target").asDouble());
         case "WindowedRate" ->
             new RuleSpec.WindowedRate(
-                String.valueOf(data.get("numeratorMetric")),
-                String.valueOf(data.get("denominatorMetric")),
-                RuleSpec.Operator.valueOf(String.valueOf(data.get("operator"))),
-                ((Number) data.get("target")).doubleValue());
+                data.path("numeratorMetric").asText(),
+                data.path("denominatorMetric").asText(),
+                RuleSpec.Operator.valueOf(data.path("operator").asText()),
+                data.path("target").asDouble());
         case "Deadline" ->
             new RuleSpec.Deadline(
-                String.valueOf(data.get("eventMetric")),
-                java.time.Instant.parse(String.valueOf(data.get("dueAt"))));
+                data.path("eventMetric").asText(),
+                java.time.Instant.parse(data.path("dueAt").asText()));
         default -> null;
       };
     } catch (Exception e) {
@@ -99,19 +99,17 @@ public final class OutcomeJson {
       if (text == null || text.isBlank() || text.equals("{}")) {
         return null;
       }
-      @SuppressWarnings("unchecked")
-      Map<String, Object> data = JSON.readValue(text, Map.class);
-      int floor = ((Number) data.getOrDefault("floorScore", 0)).intValue();
-      int clawback = ((Number) data.getOrDefault("clawbackBasisPointsBelowFloor", 0)).intValue();
-      @SuppressWarnings("unchecked")
-      List<Map<String, Object>> tiers =
-          (List<Map<String, Object>>) data.getOrDefault("tiers", List.of());
+      com.fasterxml.jackson.databind.JsonNode data = JSON.readTree(text);
+      if (data == null || data.isNull() || data.isMissingNode()) {
+        return null;
+      }
+      int floor = data.path("floorScore").asInt(0);
+      int clawback = data.path("clawbackBasisPointsBelowFloor").asInt(0);
       List<TierTable.Tier> parsed = new java.util.ArrayList<>();
-      for (Map<String, Object> map : tiers) {
+      for (com.fasterxml.jackson.databind.JsonNode item : data.path("tiers")) {
         parsed.add(
             new TierTable.Tier(
-                ((Number) map.get("minimumScore")).intValue(),
-                ((Number) map.get("payoutBasisPoints")).intValue()));
+                item.path("minimumScore").asInt(0), item.path("payoutBasisPoints").asInt(0)));
       }
       return new TierTable(floor, clawback, parsed);
     } catch (Exception e) {

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Outcome Escrow Status</title></head>
+<body>
+  <h1>Outcome Escrow Status</h1>
+  <h2>Contracts</h2>
+  <ul>
+    <li th:each="c : ${contracts}" th:text="${c.id} + ' - ' + ${c.name} + ' (' + ${c.currency} + ')'"></li>
+  </ul>
+  <h2>Outcomes</h2>
+  <ul>
+    <li th:each="o : ${outcomes}" th:text="${o.id} + ' (' + ${o.contractId} + ') ' + ${o.name} + ' [' + ${o.metric} + ']'"></li>
+  </ul>
+  <h2>Latest verdicts</h2>
+  <ul>
+    <li th:each="v : ${verdicts}"
+        th:text="${v.outcomeId} + ' = ' + ${v.status} + ' (' + ${v.score} + ' bps) at ' + ${v.evaluatedAt}"></li>
+  </ul>
+  <h2>Ledger accounts</h2>
+  <ul>
+    <li th:each="a : ${accounts}" th:text="${a.id} + ': ' + ${a.balanceMinor} + ' ' + ${a.currency}"></li>
+  </ul>
+</body>
+</html>
