@@ -7,25 +7,97 @@ outcomes:
     connector: github
     metric: milestone_closed_at
     params: { milestone: "Sprint 1" }
-    window_days: 30
+    windowDays: 30
+    value: 1000
+    rule:
+      type: Deadline
+      eventMetric: milestone_closed_at
+      dueAt: 2026-12-31T23:59:59Z
+    tiers:
+      floorScore: 10000
+      clawbackBasisPointsBelowFloor: 2000
+      tiers:
+        - minimumScore: 10000
+          payoutBasisPoints: 10000
   - id: self-ci-runs-passed
     name: CI runs passed on main
     connector: github
     metric: ci_runs_passed
-    window_days: 30
+    windowDays: 30
+    value: 1000
+    rule:
+      type: WindowedRate
+      numeratorMetric: ci_runs_passed
+      denominatorMetric: ci_runs_total
+      operator: AT_LEAST
+      target: 0.95
+    tiers:
+      floorScore: 9000
+      clawbackBasisPointsBelowFloor: 1000
+      tiers:
+        - minimumScore: 0
+          payoutBasisPoints: 0
+        - minimumScore: 9000
+          payoutBasisPoints: 6000
+        - minimumScore: 9500
+          payoutBasisPoints: 10000
   - id: self-ci-runs-total
     name: CI runs total on main
     connector: github
     metric: ci_runs_total
-    window_days: 30
+    windowDays: 30
+    value: 1000
+    rule:
+      type: Threshold
+      metric: ci_runs_total
+      operator: AT_LEAST
+      target: 1.0
+    tiers:
+      floorScore: 0
+      clawbackBasisPointsBelowFloor: 0
+      tiers:
+        - minimumScore: 0
+          payoutBasisPoints: 0
+        - minimumScore: 10000
+          payoutBasisPoints: 10000
   - id: self-pr-median-hours
     name: PR median hours to merge
     connector: github
     metric: pr_median_hours_to_merge
-    window_days: 30
+    windowDays: 30
+    value: 1000
+    rule:
+      type: Threshold
+      metric: pr_median_hours_to_merge
+      operator: AT_MOST
+      target: 72.0
+    tiers:
+      floorScore: 0
+      clawbackBasisPointsBelowFloor: 0
+      tiers:
+        - minimumScore: 0
+          payoutBasisPoints: 0
+        - minimumScore: 5000
+          payoutBasisPoints: 5000
+        - minimumScore: 10000
+          payoutBasisPoints: 10000
   - id: self-open-bugs-older-than-seven-days
     name: Open bug issues older than seven days
     connector: github
     metric: open_bugs_older_than_days
     params: { days: "7" }
-    window_days: 30
+    windowDays: 30
+    value: 1000
+    rule:
+      type: Threshold
+      metric: open_bugs_older_than_days
+      operator: EXACTLY
+      target: 0.0
+    tiers:
+      floorScore: 0
+      clawbackBasisPointsBelowFloor: 0
+      tiers:
+        - minimumScore: 0
+          payoutBasisPoints: 0
+        - minimumScore: 10000
+          payoutBasisPoints: 10000
