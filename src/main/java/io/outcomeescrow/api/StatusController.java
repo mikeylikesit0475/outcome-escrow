@@ -61,12 +61,23 @@ public class StatusController {
     model.addAttribute(
         "accounts",
         jdbcClient
-            .sql("select id, currency from ledger_accounts order by id")
+            .sql(
+                """
+                select a.id, a.currency,
+                  coalesce(sum(case when p.to_account_id = a.id then p.amount_minor else 0 end), 0)
+                  - coalesce(sum(case when p.from_account_id = a.id then p.amount_minor else 0 end), 0)
+                  as balance_minor
+                from ledger_accounts a
+                left join ledger_postings p on p.from_account_id = a.id or p.to_account_id = a.id
+                group by a.id, a.currency
+                order by a.id
+                """)
             .query(
                 (rs, row) -> {
                   java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
                   map.put("id", rs.getString("id"));
                   map.put("currency", rs.getString("currency"));
+                  map.put("balanceMinor", rs.getLong("balance_minor"));
                   return map;
                 })
             .list());

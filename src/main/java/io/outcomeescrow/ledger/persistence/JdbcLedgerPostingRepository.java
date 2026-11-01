@@ -1,7 +1,6 @@
 package io.outcomeescrow.ledger.persistence;
 
 import java.util.Map;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -42,18 +41,16 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
     params.put("postedAt", java.sql.Timestamp.from(record.postedAt()));
     params.put("verdictId", record.verdictId());
     params.put("outcomeId", record.outcomeId());
-    try {
-      jdbcClient
-          .sql(
-              """
-              insert into ledger_postings (id, idempotency_key, from_account_id, to_account_id, amount_minor, currency, posted_at, verdict_id, outcome_id)
-              values (:id, :idempotencyKey, :fromAccountId, :toAccountId, :amountMinor, :currency, :postedAt, :verdictId, :outcomeId)
-              """)
-          .params(params)
-          .update();
-      return true;
-    } catch (DuplicateKeyException e) {
-      return false;
-    }
+    int inserted =
+        jdbcClient
+            .sql(
+                """
+                insert into ledger_postings (id, idempotency_key, from_account_id, to_account_id, amount_minor, currency, posted_at, verdict_id, outcome_id)
+                values (:id, :idempotencyKey, :fromAccountId, :toAccountId, :amountMinor, :currency, :postedAt, :verdictId, :outcomeId)
+                on conflict (idempotency_key) do nothing
+                """)
+            .params(params)
+            .update();
+    return inserted > 0;
   }
 }

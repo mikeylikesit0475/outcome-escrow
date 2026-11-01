@@ -18,7 +18,7 @@
   </ul>
   <h2>Ledger accounts</h2>
   <ul>
-    <li th:each="a : ${accounts}" th:text="${a.id} + ' (' + ${a.currency} + ')'"></li>
+    <li th:each="a : ${accounts}" th:text="${a.id} + ': ' + ${a.balanceMinor} + ' ' + ${a.currency}"></li>
   </ul>
 </body>
 </html>

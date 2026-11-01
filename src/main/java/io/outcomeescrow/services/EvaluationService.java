@@ -157,7 +157,7 @@ public class EvaluationService {
     RuleSpec rule = OutcomeJson.parseRule(row.ruleJson());
     TierTable tiers = OutcomeJson.parseTiers(row.tiersJson());
     Map<String, String> params = parseParams(row.params());
-    Instant now = clock.instant();
+    Instant now = stored.evaluatedAt();
     int days = row.windowDays() == null ? 30 : row.windowDays();
     Window window = Window.trailingDays(now, days);
     Outcome outcome =
@@ -172,8 +172,38 @@ public class EvaluationService {
             row.metric(),
             params,
             window);
+    List<EvidenceRecord> outcomeRecords = evidenceRepository.findByOutcome(row.id());
+    java.util.List<EvidenceRecord> orderedRecords =
+        outcomeRecords.stream()
+            .sorted(
+                java.util.Comparator.comparing(EvidenceRecord::capturedAt)
+                    .thenComparing(r -> r.hash() == null ? "" : r.hash()))
+            .toList();
+    int limit = Math.max(0, stored.evidenceCount());
+    if (limit > orderedRecords.size()) {
+      limit = orderedRecords.size();
+    }
+    java.util.List<EvidenceRecord> selected =
+        new java.util.ArrayList<>(orderedRecords.subList(0, limit));
+    if (stored.evidenceHeadHash() != null && !stored.evidenceHeadHash().isBlank()) {
+      // Ensure the selected set ends at the verdict's head hash when present.
+      for (int i = selected.size(); i < orderedRecords.size(); i++) {
+        selected.add(orderedRecords.get(i));
+        if (java.util.Objects.equals(orderedRecords.get(i).hash(), stored.evidenceHeadHash())) {
+          break;
+        }
+      }
+      // If the head hash is not found, revert to the evidence count subset.
+      if (!selected.isEmpty()
+          && !java.util.Objects.equals(
+              selected.get(selected.size() - 1).hash(), stored.evidenceHeadHash())) {
+        selected =
+            new java.util.ArrayList<>(
+                orderedRecords.subList(0, Math.min(limit, orderedRecords.size())));
+      }
+    }
     List<Evidence> evidence =
-        evidenceRepository.findByOutcome(row.id()).stream()
+        selected.stream()
             .map(
                 record ->
                     new Evidence(

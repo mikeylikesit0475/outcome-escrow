@@ -95,14 +95,7 @@ class Sprint3ApiTests {
     assertTrue(replay.contains("\"identical\":true"));
 
     // second evaluate posts nothing
-    @SuppressWarnings("unused")
-    String second =
-        mockMvc
-            .perform(post("/contracts/c-api/evaluate"))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
+    mockMvc.perform(post("/contracts/c-api/evaluate")).andExpect(status().isOk());
     long escrow =
         jdbcClient
             .sql(
