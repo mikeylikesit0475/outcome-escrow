@@ -3,11 +3,14 @@ package io.outcomeescrow.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.outcomeescrow.domain.Outcome;
+import io.outcomeescrow.domain.RuleSpec;
+import io.outcomeescrow.domain.TierTable;
 import io.outcomeescrow.domain.Window;
 import io.outcomeescrow.evidence.EvidenceRecord;
 import io.outcomeescrow.evidence.EvidenceRepository;
 import io.outcomeescrow.evidence.EvidenceSource;
 import io.outcomeescrow.evidence.EvidenceSourceRegistry;
+import io.outcomeescrow.seeds.OutcomeJson;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +40,10 @@ public class EvidencePullController {
     List<OutcomeRow> outcomes =
         jdbcClient
             .sql(
-                "select id, name, connector, metric, window_days, params from outcomes where contract_id = :contractId")
+                """
+                select id, name, connector, metric, window_days, params, milestone_minor, rule_json, tiers_json
+                from outcomes where contract_id = :contractId
+                """)
             .param("contractId", contractId)
             .query(
                 (rs, row) ->
@@ -47,7 +53,10 @@ public class EvidencePullController {
                         rs.getString("connector"),
                         rs.getString("metric"),
                         rs.getObject("window_days", Integer.class),
-                        rs.getString("params")))
+                        rs.getString("params"),
+                        rs.getLong("milestone_minor"),
+                        rs.getString("rule_json"),
+                        rs.getString("tiers_json")))
             .list();
     int pulled = 0;
     Instant now = Instant.now();
@@ -60,12 +69,15 @@ public class EvidencePullController {
       int days = outcome.windowDays() == null ? 30 : outcome.windowDays();
       Window window = Window.trailingDays(now, days);
       Map<String, String> params = parseParams(outcome.params());
+      RuleSpec rule = OutcomeJson.parseRule(outcome.ruleJson());
+      TierTable tiers = OutcomeJson.parseTiers(outcome.tiersJson());
       Outcome domainOutcome =
           new Outcome(
               outcome.id(),
               outcome.name(),
-              null,
-              1000L,
+              rule,
+              tiers,
+              outcome.value(),
               "USD",
               outcome.connector(),
               outcome.metric(),
@@ -104,5 +116,13 @@ public class EvidencePullController {
   }
 
   record OutcomeRow(
-      String id, String name, String connector, String metric, Integer windowDays, String params) {}
+      String id,
+      String name,
+      String connector,
+      String metric,
+      Integer windowDays,
+      String params,
+      long value,
+      String ruleJson,
+      String tiersJson) {}
 }
