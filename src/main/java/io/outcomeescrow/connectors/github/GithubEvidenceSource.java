@@ -188,7 +188,12 @@ public class GithubEvidenceSource implements EvidenceSource {
             if (item.path("closed_at").isNull() || item.path("closed_at").isMissingNode()) {
               return null;
             }
-            return "{\"eventAt\":\"" + item.path("closed_at").asText() + "\"}";
+            try {
+              return MAPPER.writeValueAsString(Map.of("eventAt", item.path("closed_at").asText()));
+            } catch (Exception e) {
+              LOG.warn("GitHub metric milestone_closed_at failed: {}", e.getMessage());
+              return null;
+            }
           }
         }
       }
