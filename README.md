@@ -74,16 +74,27 @@ Every change lands through a branch, draft PR, CI, review and squash merge. Exam
 | 3. Develop | `./gradlew check` | [CI workflow](.github/workflows/ci.yml) |
 | 4. Push + PR | Draft PR with `Closes #N` | [PR #75](https://github.com/mikeylikesit0475/outcome-escrow/pull/75) |
 | 5. CI | build, CodeQL, dependency-review | [run 41266454264](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41266454264) |
-| 6. Review | Copilot review requests | `gh pr view <n> --json reviewRequests` |
+| 6. Review | PR template self-review checklist plus architect acceptance review | [Sprint 4 acceptance comment on #5](https://github.com/mikeylikesit0475/outcome-escrow/issues/5#issuecomment-6552375939) |
 | 7. Merge | Squash merge with branch deletion | `gh repo view --json deleteBranchOnMerge` |
 | 8. Release | GHCR image and GitHub release | [v0.1.0 release](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.0) |
 | 9. Observe | Scheduled `observe.yml` filing `sla-breach` issues | [Issue #113](https://github.com/mikeylikesit0475/outcome-escrow/issues/113) |
 
 ## Evidence from a real run
 
-- Status page: [`/status`](http://localhost:8080/status) (service running locally)
-- Auto-filed observe issue: [#113](https://github.com/mikeylikesit0475/outcome-escrow/issues/113)
-- Release page: [v0.1.0](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.0)
+![Status page from the released v0.1.1 image showing the partial tier and ledger balances](docs/screenshots/status-page.png)
+Status page from the released `v0.1.1` image, showing the partial tier and named ledger balances.
+
+![PR #117 passing build, CodeQL and dependency-review](docs/screenshots/pr-117-checks.png)
+CI evidence for the late security fix: build, CodeQL and dependency-review are all green on PR #117.
+
+![v0.1.1 release page](docs/screenshots/release-v0.1.1.png)
+The v0.1.1 release page produced by the tag-driven workflow.
+
+![Planted-breach auto-filed issue #113](docs/screenshots/auto-filed-issue-113.png)
+Issue #113 as filed by `observe.yml` from a planted breach on a proof run, including its contract evidence hash and rule version.
+
+- Auto-filed observe issue: [#113](https://github.com/mikeylikesit0475/outcome-escrow/issues/113) was filed by `observe.yml` from a **planted** breach on a `workflow_dispatch` proof run (deadline `2025-01-01` in `self-delivery.yaml` on a proof image/branch, not `main`). The scheduled run against the real contract (run `41269036605`) found no breach and filed nothing, and did not duplicate #113. The fix-to-release half of the loop was exercised by security finding #117 → v0.1.1 rather than by #113.
+- Release page: [v0.1.1](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.1)
 - Green CI check: [run 41266454264](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41266454264)
 
 ## Two-minute demo script
