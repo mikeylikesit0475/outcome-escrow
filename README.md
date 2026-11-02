@@ -1,8 +1,15 @@
 # outcome-escrow
 
 ![version](https://img.shields.io/badge/version-0.1.1-blue)
+![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-brightgreen?logo=springboot)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)
+![Gradle](https://img.shields.io/badge/Gradle-9.8-02303A?logo=gradle)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)
+![Prometheus](https://img.shields.io/badge/Prometheus-metrics-E6522C?logo=prometheus)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions)
 
-Outcome-based IT vendor & SLA tracker. Contracts declare machine-checkable outcomes, evidence is pulled from enterprise systems into a hash-chained store, a deterministic evaluator issues replayable verdicts, and an append-only escrow ledger pays out by tier or claws back.
+Outcome-based IT vendor & SLA tracker built on Java 25 / Spring Boot 4.1 / PostgreSQL 16 / Gradle 9.8. Contracts declare machine-checkable outcomes, evidence is pulled from enterprise systems into a hash-chained store, a deterministic evaluator issues replayable verdicts, and an append-only escrow ledger pays out by tier or claws back.
 
 **Status: v0.1.1 released.** See [`docs/GITHUB_FLOW.md`](docs/GITHUB_FLOW.md) for the full nine-step engineering flow this repository demonstrates.
 
@@ -25,7 +32,7 @@ flowchart LR
     J[/actuator / Prometheus/] --> K[Observability]
 ```
 
-## 90-second demo
+## Quickstart & demo
 
 ```bash
 docker compose up --build
@@ -35,6 +42,45 @@ curl -s -X POST http://localhost:8080/contracts/self-delivery/evidence:pull
 curl -s -X POST http://localhost:8080/contracts/self-delivery/evaluate
 curl -s http://localhost:8080/contracts/self-delivery/report
 curl -s http://localhost:8080/actuator/prometheus | grep evaluations_total
+curl -s http://localhost:8080/actuator/health
+gh issue list --label sla-breach --state all
+gh release view v0.1.1
+gh workflow run observe.yml
+```
+
+### Sample contract (excerpt)
+
+```yaml
+outcomes:
+  - id: self-ci-pass-rate
+    rule:
+      type: WindowedRate
+      numeratorMetric: ci_pass_rate
+      denominatorMetric: ci_pass_rate
+      operator: AT_LEAST
+      target: 0.95
+    tiers:
+      - minimumScore: 9500
+        payoutBasisPoints: 10000
+```
+
+### Sample report output
+
+```text
+# Settlement report for self-delivery
+
+## Outcome self-ci-pass-rate - CI pass rate on main
+Milestone value: 1000 USD
+Rule: {"type":"WindowedRate","numeratorMetric":"ci_pass_rate","denominatorMetric":"ci_pass_rate","operator":"AT_LEAST","target":0.95}
+Latest verdict: MET (10000 bps)
+Evidence head hash: 9b3f8c0d1e9a6f4...
+Rule version: eval-0.1.0
+Explanation: CI pass rate 14/14 (100%) meets AT_LEAST 95%.
+
+## Ledger balances
+- ESCROW: 4000 USD
+- VENDOR_PAYABLE: 1000 USD
+```
 ```
 
 ## API table
@@ -58,7 +104,7 @@ curl -s http://localhost:8080/actuator/prometheus | grep evaluations_total
 
 ## GitHub flow
 
-Every change lands through a branch, draft PR, CI, review and squash merge. Example: [PR #75](https://github.com/mikeylikesit0475/outcome-escrow/pull/75) carried Sprint 3 settlement and was merged with green checks. A green run on a later ready PR is [run 41266454264](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41266454264); the v0.1.0 release run is [41264810544](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41264810544), published on the [v0.1.0 release page](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.0).
+Every change lands through a branch, draft PR, CI, review and squash merge. Example: [PR #75](https://github.com/mikeylikesit0475/outcome-escrow/pull/75) carried Sprint 3 settlement and was merged with green checks. A green run on a later ready PR is [run 41266454264](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41266454264); the first released tag ran via [41264810544](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41264810544) to the [v0.1.0 release page](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.0), and the current released tag ran via [41268490235](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41268490235) to the [v0.1.1 release page](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.1).
 
 - Plan: [`MASTER_SCRUM.md`](MASTER_SCRUM.md)
 - Design: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
@@ -76,8 +122,10 @@ Every change lands through a branch, draft PR, CI, review and squash merge. Exam
 | 5. CI | build, CodeQL, dependency-review | [run 41266454264](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41266454264) |
 | 6. Review | PR template self-review checklist plus architect acceptance review | [Sprint 4 acceptance comment on #5](https://github.com/mikeylikesit0475/outcome-escrow/issues/5#issuecomment-6552375939) |
 | 7. Merge | Squash merge with branch deletion | `gh repo view --json deleteBranchOnMerge` |
-| 8. Release | GHCR image and GitHub release | [v0.1.0 release](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.0) |
+| 8. Release | GHCR image and GitHub release | [v0.1.1 release](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.1) (initial tag: [v0.1.0](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.0)) |
 | 9. Observe | Scheduled `observe.yml` filing `sla-breach` issues | [Issue #113](https://github.com/mikeylikesit0475/outcome-escrow/issues/113) |
+
+Step 6 is intentionally single-authorship, not a teammate review: the PR stays in draft until the checklist in `PULL_REQUEST_TEMPLATE.md` is satisfied, and an architect acceptance record is posted on the sprint tracking issue (for example, the Sprint 4 acceptance comment on #5). Planning and acceptance gates therefore stay separate from implementation execution.
 
 ## Evidence from a real run
 
@@ -97,15 +145,3 @@ Issue #113 as filed by `observe.yml` from a planted breach on a proof run, inclu
 - Release page: [v0.1.1](https://github.com/mikeylikesit0475/outcome-escrow/releases/tag/v0.1.1)
 - Green CI check: [run 41266454264](https://github.com/mikeylikesit0475/outcome-escrow/actions/runs/41266454264)
 
-## Two-minute demo script
-
-1. `docker compose up --build`
-2. `curl -s http://localhost:8080/contracts`
-3. `curl -s -X POST http://localhost:8080/contracts/self-delivery/evidence:pull`
-4. `curl -s -X POST http://localhost:8080/contracts/self-delivery/evaluate`
-5. `curl -s http://localhost:8080/contracts/self-delivery/report`
-6. `curl -s http://localhost:8080/actuator/prometheus | grep evaluations_total`
-7. `curl -s http://localhost:8080/actuator/health`
-8. `gh issue list --label sla-breach --state all`
-9. `gh release view v0.1.0`
-10. `gh workflow run observe.yml`
