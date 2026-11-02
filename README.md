@@ -32,6 +32,13 @@ flowchart LR
     J[/actuator / Prometheus/] --> K[Observability]
 ```
 
+## What this is not (v0 scope)
+
+- **No authentication, no multi-tenancy.** Outcome Escrow v0.1.x is a deliberately single-tenant PoC: the ledger, evidence chain and contracts are not user-scoped, and there is no OIDC, role-based authorization, or customer/vendor login. Roadmap only.
+- **No contract authoring surface.** Contracts and outcomes are seeded from YAML (`contracts/*.yaml`); there are no mutable CRUD endpoints, no versioned rule history UI, and no visual authoring.
+- **Settlement stops at the ledger.** Payouts and clawbacks produce double-entry postings and a signed-webhook stub (`SETTLEMENT_WEBHOOK_URL`). They do **not** move real money outside this process; actual disbursement to banking rails is out of scope for v0.
+- **Fixture connectors are synthetic.** Jira, Salesforce and Snowflake adapters read deterministic generated JSON with `synthetic: true`; only the GitHub adapter is live and read-only.
+
 ## Quickstart & demo
 
 ```bash
@@ -87,20 +94,18 @@ Explanation: CI pass rate 14/14 (100%) meets AT_LEAST 95%.
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/contracts` | List contracts |
-| GET | `/contracts/{id}` | Contract detail |
-| GET | `/contracts/{id}/outcomes` | Outcomes and rules |
-| GET | `/contracts/{id}/evidence` | Evidence chain |
-| GET | `/contracts/{id}/evidence/verify` | Verify chain integrity |
-| POST | `/contracts/{id}/evidence:pull` | Pull evidence |
-| POST | `/contracts/{id}/evaluate` | Evaluate all outcomes |
-| GET | `/contracts/{id}/verdicts` | Verdict history |
-| POST | `/verdicts/{id}/replay` | Replay a verdict |
-| GET | `/contracts/{id}/report` | Markdown settlement report |
-| GET | `/ledger/balances` | Ledger balances |
-| GET | `/status` | Service status and balances |
-| GET | `/actuator/health` | Health |
-| GET | `/actuator/prometheus` | Metrics |
+| GET | `/contracts` · `/contracts/{id}` | read contracts |
+| GET | `/contracts/{id}/outcomes` | outcomes and rules |
+| GET | `/contracts/{id}/evidence` · `/contracts/{id}/evidence/verify` | list / walk hash chain |
+| POST | `/contracts/{id}/evidence:pull` | run connectors for all outcomes |
+| POST | `/contracts/{id}/evaluate` | verdicts + settlement + postings |
+| GET | `/contracts/{id}/verdicts` · `/verdicts/{id}` | read verdicts |
+| POST | `/verdicts/{id}/replay` | re-evaluate from stored evidence, compare |
+| GET | `/contracts/{id}/report` | markdown settlement report |
+| GET | `/ledger/balances` | balances per account + postings |
+| GET | `/status` | server-rendered read-only page |
+| GET | `/actuator/health` · `/actuator/prometheus` | observability |
+| GET | `/v3/api-docs` · `/swagger-ui` | OpenAPI |
 
 ## GitHub flow
 

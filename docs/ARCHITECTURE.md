@@ -80,6 +80,8 @@ create trigger postings_append_only before update or delete on ledger_postings f
 
 Integration tests use Testcontainers Postgres. The tamper test (Sprint 2) disables the trigger inside a test-only transaction (`alter table evidence disable trigger ...`) to corrupt a row and prove `verify` catches it; this is the only place the trigger is bypassed and it is commented as such.
 
+Linear chain insertion is serialized per contract: the repository issues `select 1 from contracts where id = :contractId for update` before computing `seq` and `prevHash`, so concurrent `evidence:pull` calls append one row at a time in insertion order instead of forking the chain.
+
 ## 5. Connectors
 
 ```java
@@ -103,14 +105,14 @@ Fixture files carry `"synthetic": true` and the generator script lives in `tools
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/contracts` · `/contracts/{id}` | read |
+| GET | `/contracts` · `/contracts/{id}` · `/contracts/{id}/outcomes` | read |
 | POST | `/contracts/{id}/evidence:pull` | run connectors for all outcomes |
 | GET | `/contracts/{id}/evidence` · `/contracts/{id}/evidence/verify` | list / walk hash chain |
 | POST | `/contracts/{id}/evaluate` | verdicts + settlement + postings |
-| GET | `/contracts/{id}/verdicts` · `/verdicts/{id}` | read |
+| GET | `/contracts/{id}/verdicts` · `/verdicts/{id}` | read verdicts |
 | POST | `/verdicts/{id}/replay` | re-evaluate from stored evidence, compare |
-| GET | `/contracts/{id}/ledger` | balances per account + postings |
 | GET | `/contracts/{id}/report` | markdown settlement statement |
+| GET | `/ledger/balances` | balances per account + postings |
 | GET | `/status` | server-rendered read-only page |
 | GET | `/actuator/health` · `/actuator/prometheus` | observability |
 | GET | `/v3/api-docs` · `/swagger-ui` | OpenAPI |
@@ -154,10 +156,15 @@ Errors are RFC 9457 problem details. No auth in v0 (single-tenant PoC, documente
 **Decision.** `domain/` is pure Java with injected clock; evaluator golden-tested; narration (if ever) is post-verdict and icebox.
 **Consequences.** ArchUnit enforces dependency rules; any nondeterminism is a bug.
 
-### ADR-0004 — Rule types and tier table (Sprint 1, builder writes)
-### ADR-0005 — Ledger model and idempotency key (Sprint 1, builder writes)
-### ADR-0006 — Evidence hash chain (Sprint 2, builder writes)
-### ADR-0007 — Connector port and fixture policy (Sprint 2, builder writes)
-### ADR-0008 — Settlement idempotency and replay semantics (Sprint 3, builder writes)
+### [ADR-0004 — Rule types and tier table](adr/0004-rule-types-tier-table.md)
+Outcome rules are a sealed `RuleSpec` hierarchy (`Threshold`, `WindowedRate`, `Deadline`); tier tables turn scores into payout basis points and clawback below the floor.
+### [ADR-0005 — Ledger model and idempotency key](adr/0005-ledger-model.md)
+Double-entry postings are append-only and keyed by an idempotent `idempotencyKey`; posting the same key twice is a no-op.
+### [ADR-0006 — Evidence hash chain and append-only verification](adr/0006-evidence-hash-chain.md)
+Evidence records are per-contract SHA-256 linked through `prevHash` and append-only under the database trigger; the repository ignores adapter-supplied hashes.
+### [ADR-0007 — Connector port and adapter boundary](adr/0007-connector-port.md)
+Connectors implement the read-only `EvidenceSource` port and return immutable `Evidence`; fixtures stay synthetic and only GitHub is live.
+### [ADR-0008 — Settlement idempotency and replay semantics](adr/0008-settlement-idempotency-replay.md)
+Settlement replays stored evidence, applies tiers, and uses `sha256(outcomeId | evidenceHeadHash | ruleVersion)` as the posting idempotency key.
 
 ADR files live in `docs/adr/NNNN-title.md`; this section keeps the index.
