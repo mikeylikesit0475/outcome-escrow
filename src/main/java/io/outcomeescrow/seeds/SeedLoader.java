@@ -1,9 +1,11 @@
 package io.outcomeescrow.seeds;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.outcomeescrow.domain.RuleSpec;
 import io.outcomeescrow.domain.TierTable;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +64,7 @@ public class SeedLoader implements ApplicationRunner {
     try {
       resources = resolver.getResources("classpath:contracts/*.yaml");
       Arrays.sort(resources, (a, b) -> a.getFilename().compareTo(b.getFilename()));
-    } catch (Exception e) {
+    } catch (IOException e) {
       throw new IllegalStateException(e);
     }
     for (Resource resource : resources) {
@@ -154,7 +156,7 @@ public class SeedLoader implements ApplicationRunner {
   static String paramsJson(Map<String, String> params) {
     try {
       return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(params);
-    } catch (Exception e) {
+    } catch (JsonProcessingException e) {
       throw new IllegalStateException(e);
     }
   }

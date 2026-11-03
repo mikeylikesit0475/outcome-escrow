@@ -9,6 +9,7 @@ import io.outcomeescrow.evidence.EvidenceSource;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
@@ -65,7 +66,7 @@ public abstract class FixtureEvidenceSource implements EvidenceSource {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
-    } catch (Exception e) {
+    } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException(e);
     }
   }

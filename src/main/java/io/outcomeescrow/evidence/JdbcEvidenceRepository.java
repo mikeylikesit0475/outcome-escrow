@@ -14,7 +14,7 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
   static {
     try {
       MD = java.security.MessageDigest.getInstance("SHA-256");
-    } catch (Exception e) {
+    } catch (java.security.NoSuchAlgorithmException e) {
       throw new IllegalStateException(e);
     }
   }
@@ -174,7 +174,7 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
         valid = false;
         break;
       }
-      if (row.prevHash() != previous && !Objects.equals(row.prevHash(), previous)) {
+      if (!Objects.equals(row.prevHash(), previous)) {
         valid = false;
         break;
       }

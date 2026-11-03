@@ -1,5 +1,6 @@
 package io.outcomeescrow.seeds;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.outcomeescrow.domain.RuleSpec;
 import io.outcomeescrow.domain.TierTable;
@@ -39,7 +40,7 @@ public final class OutcomeJson {
     }
     try {
       return JSON.writeValueAsString(data);
-    } catch (Exception e) {
+    } catch (JsonProcessingException e) {
       throw new IllegalStateException(e);
     }
   }
@@ -89,7 +90,7 @@ public final class OutcomeJson {
     data.put("tiers", tierData);
     try {
       return JSON.writeValueAsString(data);
-    } catch (Exception e) {
+    } catch (JsonProcessingException e) {
       throw new IllegalStateException(e);
     }
   }

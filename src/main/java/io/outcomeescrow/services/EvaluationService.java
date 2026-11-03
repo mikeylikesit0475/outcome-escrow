@@ -66,7 +66,8 @@ public class EvaluationService {
       RuleSpec rule = OutcomeJson.parseRule(row.ruleJson());
       TierTable tiers = OutcomeJson.parseTiers(row.tiersJson());
       Map<String, String> params = parseParams(row.params());
-      int days = row.windowDays() == null ? 30 : row.windowDays();
+      Integer windowDays = row.windowDays();
+      int days = windowDays == null ? 30 : windowDays;
       Window window = Window.trailingDays(now, days);
       Outcome outcome =
           new Outcome(
@@ -183,7 +184,8 @@ public class EvaluationService {
     TierTable tiers = OutcomeJson.parseTiers(row.tiersJson());
     Map<String, String> params = parseParams(row.params());
     Instant now = stored.evaluatedAt();
-    int days = row.windowDays() == null ? 30 : row.windowDays();
+    Integer windowDays = row.windowDays();
+    int days = windowDays == null ? 30 : windowDays;
     Window window = Window.trailingDays(now, days);
     Outcome outcome =
         new Outcome(
@@ -316,7 +318,7 @@ public class EvaluationService {
           new com.fasterxml.jackson.databind.ObjectMapper();
       return mapper.readValue(
           text, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>() {});
-    } catch (Exception ignored) {
+    } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
       return Map.of();
     }
   }
