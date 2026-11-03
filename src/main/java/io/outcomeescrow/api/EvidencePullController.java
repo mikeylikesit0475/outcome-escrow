@@ -1,5 +1,6 @@
 package io.outcomeescrow.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -71,7 +72,8 @@ public class EvidencePullController {
       if (source == null) {
         continue;
       }
-      int days = outcome.windowDays() == null ? 30 : outcome.windowDays();
+      Integer windowDays = outcome.windowDays();
+      int days = windowDays == null ? 30 : windowDays;
       Window window = Window.trailingDays(now, days);
       Map<String, String> params = parseParams(outcome.params());
       RuleSpec rule = OutcomeJson.parseRule(outcome.ruleJson());
@@ -121,7 +123,7 @@ public class EvidencePullController {
     }
     try {
       return mapper.readValue(text, new TypeReference<Map<String, String>>() {});
-    } catch (Exception ignored) {
+    } catch (JsonProcessingException ignored) {
       return Map.of();
     }
   }

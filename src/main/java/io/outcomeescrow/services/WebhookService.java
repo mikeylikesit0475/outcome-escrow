@@ -1,6 +1,7 @@
 package io.outcomeescrow.services;
 
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.Base64;
 import java.util.Map;
 import javax.crypto.Mac;
@@ -50,7 +51,7 @@ public class WebhookService {
       Mac mac = Mac.getInstance("HmacSHA256");
       mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
       return Base64.getEncoder().encodeToString(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
-    } catch (Exception e) {
+    } catch (GeneralSecurityException e) {
       throw new IllegalStateException(e);
     }
   }

@@ -199,7 +199,6 @@ public final class Evaluator {
       }
       case RuleSpec.Deadline deadline -> {
         boolean met = false;
-        boolean missed = false;
         int validCount = 0;
         Instant eventAt = null;
         for (Evidence evidence : ordered) {
@@ -213,8 +212,6 @@ public final class Evaluator {
             }
             if (!parsedEvent.isAfter(deadline.dueAt())) {
               met = true;
-            } else {
-              missed = true;
             }
           } catch (IllegalArgumentException ignored) {
           }

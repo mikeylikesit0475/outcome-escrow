@@ -1,5 +1,6 @@
 package io.outcomeescrow.connectors.github;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.outcomeescrow.domain.Evidence;
@@ -57,9 +58,9 @@ public class GithubEvidenceSource implements EvidenceSource {
     String valueJson =
         switch (metric) {
           case "ci_pass_rate" -> ciRuns(now, window);
-          case "pr_median_hours_to_merge" -> prMedian(now, window);
+          case "pr_median_hours_to_merge" -> prMedian(window);
           case "milestone_closed_at" -> milestone(outcome);
-          case "open_bugs_older_than_days" -> openBugs(now, outcome, window);
+          case "open_bugs_older_than_days" -> openBugs(now, outcome);
           default -> null;
         };
     if (valueJson == null) {
@@ -84,7 +85,8 @@ public class GithubEvidenceSource implements EvidenceSource {
             .body(String.class);
     try {
       return MAPPER.readTree(raw);
-    } catch (Exception e) {
+    } catch (JsonProcessingException | IllegalArgumentException e) {
+      // readTree(null) throws IllegalArgumentException; an empty body is treated as no data.
       return MAPPER.createArrayNode();
     }
   }
@@ -126,7 +128,7 @@ public class GithubEvidenceSource implements EvidenceSource {
     }
   }
 
-  private String prMedian(Instant now, Window window) {
+  private String prMedian(Window window) {
     try {
       JsonNode node = get(repoPath() + "/pulls?state=closed&per_page=100");
       List<Double> durations = new ArrayList<>();
@@ -187,7 +189,7 @@ public class GithubEvidenceSource implements EvidenceSource {
             }
             try {
               return MAPPER.writeValueAsString(Map.of("eventAt", item.path("closed_at").asText()));
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
               LOG.warn("GitHub metric milestone_closed_at failed: {}", e.getMessage());
               return null;
             }
@@ -201,7 +203,7 @@ public class GithubEvidenceSource implements EvidenceSource {
     }
   }
 
-  private String openBugs(Instant now, Outcome outcome, Window window) {
+  private String openBugs(Instant now, Outcome outcome) {
     int days = 7;
     Map<String, String> params = outcome.params();
     if (params != null && params.get("days") != null) {
@@ -233,16 +235,6 @@ public class GithubEvidenceSource implements EvidenceSource {
     } catch (Exception e) {
       LOG.warn("GitHub metric open_bugs_older_than_days failed: {}", e.getMessage());
       return null;
-    }
-  }
-
-  private static String sha256(String value) {
-    try {
-      java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-      return java.util.HexFormat.of()
-          .formatHex(digest.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-    } catch (Exception e) {
-      throw new IllegalStateException(e);
     }
   }
 }
