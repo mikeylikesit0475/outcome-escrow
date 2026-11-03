@@ -94,6 +94,7 @@ public class SeedLoader implements ApplicationRunner {
     RuleSpec ruleSpec = toRule(source.rule());
     TierTable tierTable = toTiers(source.tiers());
     String rawParams = source.params() == null ? null : SeedLoader.paramsJson(source.params());
+    Integer windowDays = source.windowDays();
     jdbcClient
         .sql(
             """
@@ -115,7 +116,7 @@ public class SeedLoader implements ApplicationRunner {
         .param("currency", currency)
         .param("connector", source.connector())
         .param("metric", source.metric())
-        .param("windowDays", source.windowDays() == null ? 30 : source.windowDays())
+        .param("windowDays", windowDays == null ? 30 : windowDays)
         .param("params", rawParams)
         .update();
   }
