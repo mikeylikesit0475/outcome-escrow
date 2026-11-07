@@ -120,19 +120,18 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
             "select id, contract_id, outcome_id, source, source_ref, captured_at, payload, hash, prev_hash, synthetic from evidence"
                 + fragment)
         .param(paramName, value)
-        .query(
-            (rs, rowNum) ->
-                new EvidenceRecord(
-                    rs.getString("id"),
-                    rs.getString("contract_id"),
-                    rs.getString("outcome_id"),
-                    rs.getString("source"),
-                    rs.getString("source_ref"),
-                    rs.getTimestamp("captured_at").toInstant(),
-                    rs.getString("payload"),
-                    rs.getString("hash"),
-                    rs.getString("prev_hash"),
-                    rs.getBoolean("synthetic")))
+        .query((rs, rowNum) ->
+            new EvidenceRecord(
+                rs.getString("id"),
+                rs.getString("contract_id"),
+                rs.getString("outcome_id"),
+                rs.getString("source"),
+                rs.getString("source_ref"),
+                rs.getTimestamp("captured_at").toInstant(),
+                rs.getString("payload"),
+                rs.getString("hash"),
+                rs.getString("prev_hash"),
+                rs.getBoolean("synthetic")))
         .list();
   }
 
@@ -148,13 +147,12 @@ public class JdbcEvidenceRepository implements EvidenceRepository {
                 order by seq
                 """)
             .param("contractId", contractId)
-            .query(
-                (rs, rowNum) ->
-                    new EvidenceChainRow(
-                        rs.getLong("seq"),
-                        rs.getString("hash"),
-                        rs.getString("prev_hash"),
-                        rs.getString("payload")))
+            .query((rs, rowNum) ->
+                new EvidenceChainRow(
+                    rs.getLong("seq"),
+                    rs.getString("hash"),
+                    rs.getString("prev_hash"),
+                    rs.getString("payload")))
             .list();
     String previous = null;
     boolean valid = true;

@@ -52,20 +52,19 @@ public class JdbcVerdictRepository implements VerdictRepository {
             from verdicts where id = :id
             """)
         .param("id", id)
-        .query(
-            (rs, row) ->
-                new VerdictRecord(
-                    rs.getString("id"),
-                    rs.getString("outcome_id"),
-                    rs.getInt("score"),
-                    rs.getString("status"),
-                    rs.getString("rule_version"),
-                    rs.getString("evidence_head_hash"),
-                    rs.getTimestamp("evaluated_at").toInstant(),
-                    rs.getInt("evidence_count"),
-                    rs.getInt("tier_minimum_score"),
-                    rs.getInt("tier_payout_basis_points"),
-                    rs.getString("explanation")))
+        .query((rs, row) ->
+            new VerdictRecord(
+                rs.getString("id"),
+                rs.getString("outcome_id"),
+                rs.getInt("score"),
+                rs.getString("status"),
+                rs.getString("rule_version"),
+                rs.getString("evidence_head_hash"),
+                rs.getTimestamp("evaluated_at").toInstant(),
+                rs.getInt("evidence_count"),
+                rs.getInt("tier_minimum_score"),
+                rs.getInt("tier_payout_basis_points"),
+                rs.getString("explanation")))
         .optional()
         .orElse(null);
   }
