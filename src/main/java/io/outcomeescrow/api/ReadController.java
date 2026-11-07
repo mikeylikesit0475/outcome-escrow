@@ -24,15 +24,14 @@ public class ReadController {
   public List<Map<String, Object>> contracts() {
     return jdbcClient
         .sql("select id, name, currency, created_at from contracts order by id")
-        .query(
-            (rs, row) -> {
-              Map<String, Object> map = new LinkedHashMap<>();
-              map.put("id", rs.getString("id"));
-              map.put("name", rs.getString("name"));
-              map.put("currency", rs.getString("currency"));
-              map.put("createdAt", rs.getTimestamp("created_at").toInstant().toString());
-              return map;
-            })
+        .query((rs, row) -> {
+          Map<String, Object> map = new LinkedHashMap<>();
+          map.put("id", rs.getString("id"));
+          map.put("name", rs.getString("name"));
+          map.put("currency", rs.getString("currency"));
+          map.put("createdAt", rs.getTimestamp("created_at").toInstant().toString());
+          return map;
+        })
         .list();
   }
 
@@ -42,15 +41,14 @@ public class ReadController {
         jdbcClient
             .sql("select id, name, currency, created_at from contracts where id = :id")
             .param("id", id)
-            .query(
-                (rs, row) -> {
-                  Map<String, Object> map = new LinkedHashMap<>();
-                  map.put("id", rs.getString("id"));
-                  map.put("name", rs.getString("name"));
-                  map.put("currency", rs.getString("currency"));
-                  map.put("createdAt", rs.getTimestamp("created_at").toInstant().toString());
-                  return map;
-                })
+            .query((rs, row) -> {
+              Map<String, Object> map = new LinkedHashMap<>();
+              map.put("id", rs.getString("id"));
+              map.put("name", rs.getString("name"));
+              map.put("currency", rs.getString("currency"));
+              map.put("createdAt", rs.getTimestamp("created_at").toInstant().toString());
+              return map;
+            })
             .list();
     if (rows.isEmpty()) {
       throw new IllegalArgumentException("unknown contract: " + id);
@@ -67,20 +65,19 @@ public class ReadController {
             from outcomes where contract_id = :id order by id
             """)
         .param("id", id)
-        .query(
-            (rs, row) -> {
-              Map<String, Object> map = new LinkedHashMap<>();
-              map.put("id", rs.getString("id"));
-              map.put("name", rs.getString("name"));
-              map.put("connector", rs.getString("connector"));
-              map.put("metric", rs.getString("metric"));
-              map.put("windowDays", rs.getObject("window_days", Integer.class));
-              map.put("milestoneValueMinor", rs.getLong("milestone_minor"));
-              map.put("currency", rs.getString("currency"));
-              map.put("ruleJson", rs.getString("rule_json"));
-              map.put("tiersJson", rs.getString("tiers_json"));
-              return map;
-            })
+        .query((rs, row) -> {
+          Map<String, Object> map = new LinkedHashMap<>();
+          map.put("id", rs.getString("id"));
+          map.put("name", rs.getString("name"));
+          map.put("connector", rs.getString("connector"));
+          map.put("metric", rs.getString("metric"));
+          map.put("windowDays", rs.getObject("window_days", Integer.class));
+          map.put("milestoneValueMinor", rs.getLong("milestone_minor"));
+          map.put("currency", rs.getString("currency"));
+          map.put("ruleJson", rs.getString("rule_json"));
+          map.put("tiersJson", rs.getString("tiers_json"));
+          return map;
+        })
         .list();
   }
 
@@ -112,14 +109,13 @@ public class ReadController {
             group by a.id, a.currency
             order by a.id
             """)
-        .query(
-            (rs, row) -> {
-              Map<String, Object> map = new LinkedHashMap<>();
-              map.put("accountId", rs.getString("id"));
-              map.put("currency", rs.getString("currency"));
-              map.put("balanceMinor", rs.getLong("balance_minor"));
-              return map;
-            })
+        .query((rs, row) -> {
+          Map<String, Object> map = new LinkedHashMap<>();
+          map.put("accountId", rs.getString("id"));
+          map.put("currency", rs.getString("currency"));
+          map.put("balanceMinor", rs.getLong("balance_minor"));
+          return map;
+        })
         .list();
   }
 

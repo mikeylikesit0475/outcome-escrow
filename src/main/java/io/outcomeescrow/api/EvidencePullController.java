@@ -51,18 +51,17 @@ public class EvidencePullController {
                 from outcomes where contract_id = :contractId
                 """)
             .param("contractId", contractId)
-            .query(
-                (rs, row) ->
-                    new OutcomeRow(
-                        rs.getString("id"),
-                        rs.getString("name"),
-                        rs.getString("connector"),
-                        rs.getString("metric"),
-                        rs.getObject("window_days", Integer.class),
-                        rs.getString("params"),
-                        rs.getLong("milestone_minor"),
-                        rs.getString("rule_json"),
-                        rs.getString("tiers_json")))
+            .query((rs, row) ->
+                new OutcomeRow(
+                    rs.getString("id"),
+                    rs.getString("name"),
+                    rs.getString("connector"),
+                    rs.getString("metric"),
+                    rs.getObject("window_days", Integer.class),
+                    rs.getString("params"),
+                    rs.getLong("milestone_minor"),
+                    rs.getString("rule_json"),
+                    rs.getString("tiers_json")))
             .list();
     int pulled = 0;
     Instant now = Instant.now();

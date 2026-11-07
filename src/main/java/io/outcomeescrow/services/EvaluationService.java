@@ -84,19 +84,18 @@ public class EvaluationService {
       List<EvidenceRecord> records = evidenceRepository.findByOutcome(row.id());
       List<Evidence> evidence =
           records.stream()
-              .map(
-                  record ->
-                      new Evidence(
-                          record.id(),
-                          record.contractId(),
-                          record.outcomeId(),
-                          record.source(),
-                          record.sourceRef(),
-                          record.capturedAt(),
-                          record.payload(),
-                          record.hash(),
-                          record.prevHash(),
-                          record.synthetic()))
+              .map(record ->
+                  new Evidence(
+                      record.id(),
+                      record.contractId(),
+                      record.outcomeId(),
+                      record.source(),
+                      record.sourceRef(),
+                      record.capturedAt(),
+                      record.payload(),
+                      record.hash(),
+                      record.prevHash(),
+                      record.synthetic()))
               .toList();
       Verdict verdict = io.outcomeescrow.domain.Evaluator.evaluate(outcome, evidence, now, tiers);
       String verdictId = UUID.randomUUID().toString();
@@ -226,19 +225,18 @@ public class EvaluationService {
     }
     List<Evidence> evidence =
         selected.stream()
-            .map(
-                record ->
-                    new Evidence(
-                        record.id(),
-                        record.contractId(),
-                        record.outcomeId(),
-                        record.source(),
-                        record.sourceRef(),
-                        record.capturedAt(),
-                        record.payload(),
-                        record.hash(),
-                        record.prevHash(),
-                        record.synthetic()))
+            .map(record ->
+                new Evidence(
+                    record.id(),
+                    record.contractId(),
+                    record.outcomeId(),
+                    record.source(),
+                    record.sourceRef(),
+                    record.capturedAt(),
+                    record.payload(),
+                    record.hash(),
+                    record.prevHash(),
+                    record.synthetic()))
             .toList();
     Verdict replayed = io.outcomeescrow.domain.Evaluator.evaluate(outcome, evidence, now, tiers);
     boolean identical =
